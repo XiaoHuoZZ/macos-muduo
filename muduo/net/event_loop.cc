@@ -13,7 +13,7 @@ namespace {
 }
 
 //默认超时时间
-const int kPollTimeMs = 10000;
+const int kPollTimeMs = 20000;
 
 EventLoop::EventLoop()
         : looping_(false),
@@ -55,9 +55,11 @@ void EventLoop::loop() {
     while (!quit_) {
         activeChannels_.clear();
         poller_->poll(kPollTimeMs, &activeChannels_);  //开启循环，得到的结果在activeChannels_里面
-        for (auto & activeChannel : activeChannels_) {
+        for (auto &activeChannel: activeChannels_) {
             activeChannel->handleEvent();    //事件分发（由Channel来做）
         }
+        //执行pending中的方法
+        doPendingFunctors();
     }
 
     LOG_TRACE("EventLoop stop looping");
@@ -67,6 +69,7 @@ void EventLoop::loop() {
 void EventLoop::quit() {
     quit_ = true;
 
+    //唤醒结束loop
     if (!isInLoopThread()) {
         wakeup();
     }
@@ -78,7 +81,7 @@ void EventLoop::updateChannel(Channel *channel) {
     poller_->updateChannel(channel);
 }
 
-std::pair<int,int> EventLoop::createWakeupFd() {
+std::pair<int, int> EventLoop::createWakeupFd() {
     int fd[2];
     if (pipe(fd) == -1) {
         LOG_ERROR("can't create pipe");
@@ -90,8 +93,7 @@ std::pair<int,int> EventLoop::createWakeupFd() {
 void EventLoop::handleRead() const {
     char one = 1;
     ssize_t n = read(wakeup_fds.first, &one, sizeof one);
-    if (n != sizeof one)
-    {
+    if (n != sizeof one) {
         LOG_ERROR("EventLoop::handleRead() reads {} bytes instead of 1", n);
     }
 }
@@ -99,9 +101,55 @@ void EventLoop::handleRead() const {
 void EventLoop::wakeup() const {
     char one = 1;
     ssize_t n = write(wakeup_fds.second, &one, sizeof one);
-    if (n != sizeof one)
-    {
+    if (n != sizeof one) {
         LOG_ERROR("EventLoop::wakeup() writes {} bytes instead of 1", n);
     }
 }
+
+void EventLoop::runInLoop(const EventLoop::Functor &cb) {
+    if (isInLoopThread()) {
+        cb();
+    } else {
+        queueInLoop(cb);
+    }
+}
+
+void EventLoop::queueInLoop(const Functor &cb) {
+    /**
+     * 互斥地将函数加入队列
+     */
+    {
+        std::lock_guard lg(functors_mutex_);
+        pending_functors_.push_back(cb);
+    }
+
+    /**
+     * 唤醒
+     * 1. 此时非IO线程，需要立即唤醒IO线程来执行pending_functor
+     * 2. 若IO线程此时正在执行pending中的functor, 而该functor又调用了queueInLoop，那就得先
+     * 提前向管道塞入一个字节，防止之后loop的时候新加入的functor不能及时执行
+     */
+    if (!isInLoopThread() || calling_pending_functors_) {
+        wakeup();
+    }
+}
+
+void EventLoop::doPendingFunctors() {
+    //tmp用于暂存目前为止需要执行的函数，防止不断有functor加入到列表陷入死循环，正常的IO事件得不到相应
+    std::vector<Functor> tmp;
+    calling_pending_functors_ = true;
+
+    {
+        std::lock_guard lock(functors_mutex_);
+        tmp.swap(pending_functors_);
+    }
+
+    for (auto &fun: tmp) {
+        fun();
+    }
+
+    calling_pending_functors_ = false;
+}
+
+
 

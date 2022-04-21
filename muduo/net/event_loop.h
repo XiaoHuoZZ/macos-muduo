@@ -38,10 +38,10 @@ namespace muduo::net {
         std::mutex functors_mutex_;                //互斥访问pending_functors
 
         std::pair<int,int> wakeup_fds;                 //专门用于唤醒IO线程的文件描述符，由于用pipe实现，因此需要一对描述符
-        std::unique_ptr<Channel> wakeup_channel_;    //专门用于唤醒事件注册的的channel
+        std::unique_ptr<Channel> wakeup_channel_;     //专门用于唤醒事件注册的的channel
 
         /**
-         * 取出pipe里面的数据(1字节)，防止下次loop被触发
+         * 取出pipe里面的数据(1字节)，防止陷入busy loop
          */
         void handleRead() const;
 
@@ -51,7 +51,10 @@ namespace muduo::net {
          */
         std::pair<int,int> createWakeupFd();
 
-
+        /**
+         * 执行被挂起的函数
+         */
+        void doPendingFunctors();
 
     public:
 
