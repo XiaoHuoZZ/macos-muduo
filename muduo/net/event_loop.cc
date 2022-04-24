@@ -6,7 +6,7 @@
 using muduo::net::EventLoop;
 using muduo::net::Channel;
 
-//匿名namespace 让loop_in_this_thread只对当前文件有效, 防止别的文件通过extern拿个EventLoop对象
+//匿名namespace 让loop_in_this_thread只对当前文件有效, 防止别的文件通过extern拿到EventLoop对象
 namespace {
     //记录本线程的唯一EventLoop对象
     thread_local EventLoop *loop_in_this_thread = nullptr;

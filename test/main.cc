@@ -1,8 +1,10 @@
 #include <iostream>
 #include "muduo/net/event_loop.h"
 #include "muduo/net/channel.h"
+#include "muduo/net/inet_address.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>
+
 
 int createSockServer() {
     int serv_sock;
@@ -50,10 +52,8 @@ void testRunInLoop(muduo::net::EventLoop* loop) {
 int main() {
     spdlog::set_level(spdlog::level::trace); // Set global log level to debug
 
-    muduo::net::EventLoop loop;
+    muduo::net::InetAddress address(9090);
+    LOG_INFO(address.ipv4());
 
-    std::thread t(testRunInLoop, &loop);
-    t.detach();
-    loop.loop();
     return 0;
 }

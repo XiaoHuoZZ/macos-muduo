@@ -28,7 +28,7 @@ namespace muduo::net {
         int index_;          //用于记录该channel在Poller的poll_fds_里面的位置
 
         /**
-         * 用户设置的回调  （使用std::function）
+         * 设置的回调  （使用std::function）
          */
         EventCallback readCallback_;
         EventCallback writeCallback_;
