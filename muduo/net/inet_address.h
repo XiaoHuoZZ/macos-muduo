@@ -12,21 +12,26 @@ namespace muduo::net {
     class InetAddress {
     public:
 
-        explicit InetAddress(std::string ipv4, int port);
+        explicit InetAddress(const std::string &ipv4, int port);
+
         explicit InetAddress(int port);
 
-        std::string ipv4() {return ipv4_;}
+        std::string ipv4() const;
+
+        int port() const { return ntohs(addr_.sin_port); };
+
+        sockaddr_in *sockaddrIn() { return &addr_; }
+
+        void setAddr(const sockaddr_in &addr) { addr_ = addr; };
 
     private:
-        std::string ipv4_;
-        int port_;
-        struct sockaddr_in addr_;
+        sockaddr_in addr_;
 
         /**
          * 创建struct sockaddr_in
          * @return
          */
-        sockaddr_in createSockaddr();
+        static sockaddr_in createStruct(const std::string &ipv4, int port);
     };
 }
 

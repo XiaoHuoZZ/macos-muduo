@@ -2,11 +2,13 @@
 #include "muduo/net/event_loop.h"
 #include "muduo/net/channel.h"
 #include "muduo/net/inet_address.h"
+#include "muduo/net/socket.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
+using namespace muduo::net;
 
-int createSockServer() {
+int rawSocket() {
     int serv_sock;
     int clnt_sock;
 
@@ -42,18 +44,37 @@ int createSockServer() {
     return clnt_sock;
 }
 
-void testRunInLoop(muduo::net::EventLoop* loop) {
+void testRunInLoop(EventLoop* loop) {
     getchar();     //输入一个字符，看是否能立即响应
     loop->runInLoop([]{
         LOG_INFO("run in loop");
     });
 }
 
-int main() {
-    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+void testSocket() {
+    EventLoop loop;
 
-    muduo::net::InetAddress address(9090);
-    LOG_INFO(address.ipv4());
+    Socket sock;
+    InetAddress address(8888);
+    InetAddress client_addr(0);
+
+    sock.bindAddress(address);
+    sock.listen();
+
+    Channel acceptChannel(&loop, sock.fd());
+    acceptChannel.enableReading();
+    acceptChannel.setReadCallback([&]{
+        auto data_sock = sock.accept(&client_addr);
+        LOG_INFO(data_sock.fd());
+        LOG_INFO(client_addr.ipv4());
+    });
+
+    loop.loop();
+}
+
+int main() {
+
+    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
 
     return 0;
 }
