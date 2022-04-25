@@ -20,7 +20,7 @@ namespace muduo::net {
 
         int port() const { return ntohs(addr_.sin_port); };
 
-        sockaddr_in *sockaddrIn() { return &addr_; }
+        sockaddr_in sockaddrIn() const { return addr_; }
 
         void setAddr(const sockaddr_in &addr) { addr_ = addr; };
 

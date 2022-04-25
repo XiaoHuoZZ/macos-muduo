@@ -1,4 +1,6 @@
-
+/**
+ * 使用RAII的方式封装socket
+ */
 
 #ifndef MACOS_MUDUO_SOCKET_H
 #define MACOS_MUDUO_SOCKET_H
@@ -41,19 +43,19 @@ namespace muduo::net {
          * 绑定一个地址
          * @param address 地址
          */
-        void bindAddress(InetAddress &address);
+        void bindAddress(const InetAddress &address) const;
 
         /**
          * 开启监听
          */
-        void listen();
+        void listen() const;
 
         /**
          * 受理一个连接
          * @param peeraddr 客户端地址
          * @return 得到peer socket 作数据传输
          */
-        Socket accept(InetAddress *peeraddr);
+        Socket accept(InetAddress *peeraddr) const;
 
         /**
          * 设置为非阻塞模式

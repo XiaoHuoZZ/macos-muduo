@@ -3,6 +3,7 @@
 #include "muduo/net/channel.h"
 #include "muduo/net/inet_address.h"
 #include "muduo/net/socket.h"
+#include "muduo/net/acceptor.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
@@ -72,9 +73,23 @@ void testSocket() {
     loop.loop();
 }
 
+void testAcceptor() {
+    EventLoop loop;
+    InetAddress server_addr(9090);
+    Acceptor acceptor(&loop, server_addr);
+    acceptor.listen();
+    acceptor.setNewConnCallback([](Socket&& socket, const InetAddress& address){
+        LOG_INFO(address.port());
+    });
+
+    loop.loop();
+}
+
 int main() {
 
     spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+
+    testAcceptor();
 
     return 0;
 }
