@@ -4,6 +4,7 @@
 #include "muduo/net/inet_address.h"
 #include "muduo/net/socket.h"
 #include "muduo/net/acceptor.h"
+#include "muduo/net/tcp_server.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
@@ -89,7 +90,15 @@ int main() {
 
     spdlog::set_level(spdlog::level::trace); // Set global log level to debug
 
-    testAcceptor();
+    EventLoop loop;
+    InetAddress listen_addr(9999);
+    TcpServer server(&loop, listen_addr, "server");
+    server.setConnectionCallback([](const TcpConnectionPtr& ptr) {
+        LOG_INFO("连接建立");
+    });
+    server.start();
+    loop.loop();
+
 
     return 0;
 }

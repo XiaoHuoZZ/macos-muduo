@@ -7,7 +7,8 @@ using muduo::net::Acceptor;
 Acceptor::Acceptor(muduo::net::EventLoop *loop, const muduo::net::InetAddress &listen_addr)
         : loop_(loop),
           accept_channel_(loop, accept_socket_.fd()),
-          listenning_(false) {
+          listenning_(false),
+          addr_(listen_addr) {
     //绑定地址
     accept_socket_.bindAddress(listen_addr);
     //设置channel回调，处理连接到来的事件
@@ -28,7 +29,7 @@ void Acceptor::handleRead() {
     Socket conn_sock = accept_socket_.accept(&peer_add);   //建立连接，得到新的socket
 
     /**
-     * 如果没有设置回调，RAII会自动关闭conn_sock
+     * 如果没有设置回调，RAII机制会自动关闭conn_sock
      */
     if (newConnCallback_) {
         newConnCallback_(std::move(conn_sock), peer_add);    //这里需要执行移动语义，避免conn_sock被释放

@@ -1,5 +1,6 @@
 /**
  * 用于接收新的TCP连接
+ * 并且生成连接建立后的socket
  * 连接建立后通过回调通知调用者
  */
 
@@ -9,6 +10,7 @@
 #include "muduo/base/utils.h"
 #include "muduo/net/channel.h"
 #include "muduo/net/socket.h"
+#include "muduo/net/inet_address.h"
 
 namespace muduo::net {
 
@@ -18,7 +20,9 @@ namespace muduo::net {
 
     class Acceptor {
     public:
-        using NewConnCallback = std::function<void(Socket &&socket, const InetAddress &)>;
+        using NewConnCallback = std::function<
+        void(Socket
+        &&socket, const InetAddress &)>;
     private:
 
         EventLoop *loop_;                    //使用是哪个事件循环器
@@ -26,6 +30,7 @@ namespace muduo::net {
         Channel accept_channel_;            //通过该channel注册事件
         NewConnCallback newConnCallback_;   //连接建立后所调用的函数
         bool listenning_;                  //是否已经开启listen
+        InetAddress addr_;
 
         /**
          * 处理新的连接到来
@@ -46,6 +51,8 @@ namespace muduo::net {
         void setNewConnCallback(const NewConnCallback &cb) { newConnCallback_ = cb; }
 
         bool listenning() const { return listenning_; }
+
+        InetAddress address() { return addr_; }
 
         /**
          * 开启监听

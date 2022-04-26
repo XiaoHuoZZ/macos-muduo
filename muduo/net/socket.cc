@@ -19,10 +19,12 @@ Socket::Socket() : fd_(socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) {
 
 
 Socket::~Socket() {
-    if (::close(fd_) < 0) {
-        LOG_ERROR("socket::close error {}", fd());
+    if (fd_ != -1) {
+        if (::close(fd_) < 0) {
+            LOG_ERROR("socket::close error {}", fd());
+        }
+        LOG_TRACE("socket::close {}", fd());
     }
-    LOG_TRACE("socket::close {}", fd());
 }
 
 void Socket::bindAddress(const InetAddress &address) const {
