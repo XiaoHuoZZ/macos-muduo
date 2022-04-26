@@ -61,6 +61,20 @@ namespace muduo::net {
          * 设置为非阻塞模式
          */
         void setNoBlocking() const;
+
+        /**
+         * 是否设置socket SO_REUSEADDR
+         * 设置之后可以降低sock bind地址的错误概率
+         * @param on
+         */
+        void setReuseAddr(bool on) const;
+
+        /**
+         * 是否设置socket SO_KEEPALIVE
+         * 设置之后可以开启TCP心跳
+         * @param on
+         */
+        void setKeepAlive(bool on) const;
     };
 }
 

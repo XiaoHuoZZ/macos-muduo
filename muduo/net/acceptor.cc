@@ -9,6 +9,8 @@ Acceptor::Acceptor(muduo::net::EventLoop *loop, const muduo::net::InetAddress &l
           accept_channel_(loop, accept_socket_.fd()),
           listenning_(false),
           addr_(listen_addr) {
+    //设置reuse addr
+    accept_socket_.setReuseAddr(true);
     //绑定地址
     accept_socket_.bindAddress(listen_addr);
     //设置channel回调，处理连接到来的事件

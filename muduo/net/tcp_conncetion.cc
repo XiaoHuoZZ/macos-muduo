@@ -20,6 +20,9 @@ TcpConnection::TcpConnection(EventLoop *loop, std::string name, Socket &&socket,
      */
     channel_->setReadCallback([this] { handleRead(); });
 
+    //开启TCP心跳
+    socket_.setKeepAlive(true);
+
     LOG_TRACE("TcpConnection::ctor[{}] at fd = {}", name_, socket_.fd());
 }
 

@@ -66,6 +66,24 @@ void Socket::setNoBlocking() const {
     }
 }
 
+void Socket::setReuseAddr(bool on) const {
+    int opt = on ? 1 : 0;
+    int res = ::setsockopt(fd_, SOL_SOCKET, SO_REUSEADDR,
+                 &opt, static_cast<socklen_t>(sizeof opt));
+    if (res == -1) {
+        LOG_ERROR("socket::setReuseAddr error {}", fd_);
+    }
+}
+
+void Socket::setKeepAlive(bool on) const {
+    int opt = on ? 1 : 0;
+    int res = ::setsockopt(fd_, SOL_SOCKET, SO_KEEPALIVE,
+                           &opt, static_cast<socklen_t>(sizeof opt));
+    if (res == -1) {
+        LOG_ERROR("socket::setKeepAlive error {}", fd_);
+    }
+}
+
 
 
 
