@@ -20,6 +20,8 @@ namespace muduo::net {
     using MessageCallback = std::function<void(const TcpConnectionPtr &,
                                                Buffer *,
                                                Timestamp)>;
+    //内部使用
+    using CloseCallback = std::function<void(const TcpConnectionPtr &)>;
 }
 
 #endif //MACOS_MUDUO_CALLBACKS_H

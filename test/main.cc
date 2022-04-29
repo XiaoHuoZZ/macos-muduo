@@ -86,6 +86,7 @@ void testAcceptor() {
     loop.loop();
 }
 
+
 int main() {
 
     spdlog::set_level(spdlog::level::trace); // Set global log level to debug
@@ -94,11 +95,9 @@ int main() {
     InetAddress listen_addr(9999);
     TcpServer server(&loop, listen_addr, "server");
     server.setConnectionCallback([](const TcpConnectionPtr& ptr) {
-        LOG_INFO("连接建立");
     });
     server.start();
     loop.loop();
-
 
     return 0;
 }

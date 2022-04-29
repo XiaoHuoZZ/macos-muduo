@@ -21,7 +21,16 @@ TcpServer::TcpServer(muduo::net::EventLoop *loop, const InetAddress &listen_addr
 }
 
 TcpServer::~TcpServer() {
+    loop_->assertInLoopThread();
+    LOG_TRACE("TcpServer::~TcpServer [{}] destructing", name_);
 
+    for (auto& item : connections_)
+    {
+        //转移资源所有权
+        TcpConnectionPtr conn(std::move(item.second));
+        conn->getLoop()->runInLoop(
+                [conn] { conn->connectDestroyed(); });
+    }
 }
 
 
@@ -41,6 +50,9 @@ void TcpServer::newConnection(Socket &&socket, const InetAddress &peer_addr) {
     connections_[conn_name] = conn;
     conn->setConnectionCallback(connectionCallback_);
     conn->setMessageCallback(messageCallback_);
+    conn->setCloseCallback([this](const TcpConnectionPtr& ptr) {
+        removeConnection(ptr);
+    });
     conn->connectEstablished();
 }
 
@@ -54,3 +66,16 @@ void TcpServer::start() {
     }
 }
 
+void TcpServer::removeConnection(const TcpConnectionPtr &conn) {
+    loop_->assertInLoopThread();
+    LOG_INFO("TcpServer::removeConnection [{}] - connection {}", name_, conn->name());
+    size_t n = connections_.erase(conn->name());    //移除连接, 此时会导致conn引用计数减一
+    assert(n == 1); (void)n;
+    /**
+     * 这里虽然在IO线程，但是要使用queueInLoop
+     * 加入队列后，可以让conn的生命周期延长到下一次loop
+     * 否则channel 正处于handleEvent阶段时就被析构了
+     * 产生生命周期问题
+     */
+    loop_->queueInLoop([conn] { conn->connectDestroyed(); });
+}

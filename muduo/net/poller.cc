@@ -67,9 +67,7 @@ void Poller::updateChannel(Channel *channel) {
          * 将该channel加入list
          */
         channels_[channel->fd()] = channel;
-    }
-
-    else {
+    } else {
         //代表是一个旧channel, 需要更新poll_fds_
 
         /**
@@ -95,5 +93,43 @@ void Poller::updateChannel(Channel *channel) {
             //让poller忽略该fd
             pfd.fd = -channel->fd() - 1;
         }
+    }
+}
+
+void Poller::removeChannel(muduo::net::Channel *channel) {
+    assertInLoopThread();
+    LOG_TRACE("poller::removeChannel fd = {}", channel->fd());
+
+    /**
+     * 一系列检查
+     */
+    assert(channels_.find(channel->fd()) != channels_.end());
+    assert(channels_[channel->fd()] == channel);
+    assert(channel->isNoneEvent());                    //必须channel关闭监听事件后才能移除
+    int idx = channel->index();
+    assert(0 <= idx && idx < static_cast<int>(poll_fds_.size()));
+
+
+    const struct pollfd &pfd = poll_fds_[idx];               //取得pfd
+    (void) pfd;                                             //Release模式下会消除assert, 导致pfd没有使用过，这里使用一下，消除编译器警告
+    assert(pfd.fd == -channel->fd() - 1 && pfd.events == channel->events());
+    size_t n = channels_.erase(channel->fd());         //移除channel指针
+    assert(n == 1);
+    (void) n;
+
+
+    if (idx == poll_fds_.size() - 1) {
+        poll_fds_.pop_back();           //如果需要移除的pfd在数组末尾，直接弹出就好
+    } else {
+        //否则与数组末尾交换
+        int channelAtEnd = poll_fds_.back().fd;
+        iter_swap(poll_fds_.begin() + idx, poll_fds_.end() - 1);
+
+        //如果末尾fd小于0，是一个不用关心的fd，需要还原它真实的fd
+        if (channelAtEnd < 0) {
+            channelAtEnd = -channelAtEnd - 1;
+        }
+        channels_[channelAtEnd]->set_index(idx);    //设置新的index
+        poll_fds_.pop_back();
     }
 }

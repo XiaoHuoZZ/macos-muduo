@@ -49,6 +49,7 @@ namespace muduo::net {
 
         /**
          * 生命周期由用户控制
+         * 析构时，销毁所属连接
          */
         ~TcpServer();
 
@@ -61,6 +62,12 @@ namespace muduo::net {
         void setConnectionCallback(const ConnectionCallback &cb) { connectionCallback_ = cb; }
 
         void setMessageCallback(const MessageCallback &cb) { messageCallback_ = cb; }
+
+        /**
+         * 移除一个TCP连接
+         * @param conn
+         */
+        void removeConnection(const TcpConnectionPtr& conn);
 
 
     };

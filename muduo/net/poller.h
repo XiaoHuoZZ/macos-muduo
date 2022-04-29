@@ -39,13 +39,19 @@ namespace muduo::net {
          */
         void updateChannel(Channel *channel);
 
+        /**
+         * 移除该Poller里面的channel
+         * @param channel
+         */
+        void removeChannel(Channel* channel);
+
         void assertInLoopThread() { owner_loop_->assertInLoopThread(); }
 
     private:
 
         /**
          * 负责找出poll_fds_中有变化的fd, 将其所属的channel放入activeChannels里
-         * @param numEvents
+         * @param numEvents         监听的事件
          * @param activeChannels
          */
         void fillActiveChannels(int numEvents, ChannelList *activeChannels) const;
@@ -55,7 +61,9 @@ namespace muduo::net {
 
         EventLoop *owner_loop_;            //所属EventLoop
         PollFdList poll_fds_;              //poll的fd_list
-        ChannelMap channels_;              //channel列表   fd<-->channel 用fd当key加快查询
+        ChannelMap channels_;              //channel列表   fd<-->channel 用fd当key加快查询,
+        // 注意这里存的其实channel的指针，因为channel的声明周期不受Poller控制
+
 
     };
 }

@@ -112,6 +112,12 @@ namespace muduo::net {
          * 实际是向管道写入1字节
          */
         void wakeup() const;
+
+        /**
+         * 在该EventLoop里面移除channel
+         * @param channel
+         */
+        void removeChannel(Channel* channel);
     };
 }  // namespace muduo::net
 

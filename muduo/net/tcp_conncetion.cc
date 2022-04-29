@@ -32,7 +32,15 @@ void TcpConnection::handleRead() {
     /**
      * 还未实现应用层buffer
      */
-    LOG_INFO("有数据到来");
+    if (n > 0) {
+        LOG_INFO("有数据到来");
+    }
+        //读到了EOF,证明对方关闭了输出流
+    else if (n == 0) {
+        handleClose();
+    } else {
+        handleError();
+    }
 }
 
 TcpConnection::~TcpConnection() {
@@ -40,9 +48,8 @@ TcpConnection::~TcpConnection() {
     assert(state_ == kDisconnected);
 }
 
-std::string TcpConnection::stateToString() const {
-    switch (state_)
-    {
+const char *TcpConnection::stateToString() const {
+    switch (state_) {
         case kConnecting:
             return "kConnecting";
         case kConnected:
@@ -66,4 +73,42 @@ void TcpConnection::connectEstablished() {
      * 不能使用make_shared(this), 因为会干扰资源的生命周期
      */
     connectionCallback_(shared_from_this());
+}
+
+void TcpConnection::handleClose() {
+    loop_->assertInLoopThread();
+    LOG_TRACE("TcpConnection::handleClose state = {}", stateToString());
+    assert(state_ == kConnected);
+
+    channel_->disableAll();         //是否需要？
+
+    /**
+     * 通知TcpServer或TcpClient移除所持有的连接
+     */
+    closeCallback_(shared_from_this());
+}
+
+void TcpConnection::connectDestroyed() {
+    loop_->assertInLoopThread();
+
+    assert(state_ == kConnected);
+
+    setState(kDisconnected);
+    channel_->disableAll();
+    connectionCallback_(shared_from_this());
+
+    //向EventLoop移除该channel
+    channel_->remove();
+}
+
+void TcpConnection::handleError() {
+    LOG_ERROR("TcpConnection Read Error {}", socket_.fd());
+}
+
+void TcpConnection::forceClose() {
+    if (state_ == (kConnected | kConnecting)) {
+        loop_->runInLoop([this] {
+            handleClose();
+        });
+    }
 }

@@ -26,6 +26,8 @@ namespace muduo::net {
         int events_;         //关心的IO事件
         int revents_;        //目前活动的事件
         int index_;          //用于记录该channel在Poller的poll_fds_里面的位置
+        bool event_handling_;  //channel是否处于事件分发状态
+        bool added_to_loop_;   //是否已经添加到EventLoop
 
         /**
          * 设置的回调  （使用std::function）
@@ -33,6 +35,7 @@ namespace muduo::net {
         EventCallback readCallback_;
         EventCallback writeCallback_;
         EventCallback errorCallback_;
+        EventCallback closeCallback_;
 
         /**
          * 通知EventLoop更新该channel
@@ -42,6 +45,8 @@ namespace muduo::net {
     public:
 
         Channel(EventLoop *loop, int fd);
+
+        ~Channel();
 
         /**
          * 将到来的事件进行分发
@@ -53,6 +58,8 @@ namespace muduo::net {
         void setWriteCallback(const EventCallback &cb) { writeCallback_ = cb; }
 
         void setErrorCallback(const EventCallback &cb) { errorCallback_ = cb; }
+
+        void setCloseCallback(const EventCallback &cb) { closeCallback_ = cb; }
 
         int fd() const { return fd_; }
 
@@ -70,6 +77,14 @@ namespace muduo::net {
             update();
         }
 
+        /**
+         * 该fd不关心任何事件，并通知EventLoop
+         */
+        void disableAll() {
+            events_ = kNoneEvent;
+            update();
+        }
+
         int index() const { return index_; }
 
         /**
@@ -79,6 +94,11 @@ namespace muduo::net {
         void set_index(int idx) { index_ = idx; }
 
         EventLoop *ownerLoop() { return loop_; }
+
+        /**
+         * 向EventLoop移除自己
+         */
+        void remove();
 
     };
 }

@@ -151,5 +151,11 @@ void EventLoop::doPendingFunctors() {
     calling_pending_functors_ = false;
 }
 
+void EventLoop::removeChannel(Channel *channel) {
+    assert(channel->ownerLoop() == this);
+    assertInLoopThread();
+    poller_->removeChannel(channel);
+}
+
 
 
