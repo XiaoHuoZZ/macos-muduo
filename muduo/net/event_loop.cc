@@ -34,7 +34,7 @@ EventLoop::EventLoop()
     }
 
     //设置wakeup_channel_
-    wakeup_channel_->setReadCallback([this] { handleRead(); });
+    wakeup_channel_->setReadCallback([this](TimeStamp receive_time) { handleRead(); });
     wakeup_channel_->enableReading();
 }
 
@@ -54,9 +54,9 @@ void EventLoop::loop() {
      */
     while (!quit_) {
         activeChannels_.clear();
-        poller_->poll(kPollTimeMs, &activeChannels_);  //开启循环，得到的结果在activeChannels_里面
+        TimeStamp poll_time = poller_->poll(kPollTimeMs, &activeChannels_);  //开启循环，得到的结果在activeChannels_里面
         for (auto &activeChannel: activeChannels_) {
-            activeChannel->handleEvent();    //事件分发（由Channel来做）
+            activeChannel->handleEvent(poll_time);    //事件分发（由Channel来做）
         }
         //执行pending中的方法
         doPendingFunctors();

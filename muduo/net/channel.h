@@ -16,6 +16,7 @@ namespace muduo::net {
     class Channel : noncopyable {
     public:
         using EventCallback = std::function<void()>;
+        using ReadEventCallback = std::function<void(TimeStamp)>;
     private:
         static const int kNoneEvent;
         static const int kReadEvent;
@@ -32,7 +33,7 @@ namespace muduo::net {
         /**
          * 设置的回调  （使用std::function）
          */
-        EventCallback readCallback_;
+        ReadEventCallback readCallback_;
         EventCallback writeCallback_;
         EventCallback errorCallback_;
         EventCallback closeCallback_;
@@ -51,9 +52,9 @@ namespace muduo::net {
         /**
          * 将到来的事件进行分发
          */
-        void handleEvent();
+        void handleEvent(TimeStamp receiveTime);
 
-        void setReadCallback(const EventCallback &cb) { readCallback_ = cb; }
+        void setReadCallback(const ReadEventCallback &cb) { readCallback_ = cb; }
 
         void setWriteCallback(const EventCallback &cb) { writeCallback_ = cb; }
 

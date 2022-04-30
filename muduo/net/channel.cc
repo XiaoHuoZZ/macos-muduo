@@ -30,7 +30,7 @@ void Channel::update() {
     loop_->updateChannel(this);
 }
 
-void Channel::handleEvent() {
+void Channel::handleEvent(TimeStamp receive_time) {
     event_handling_ = true;
     //对方描述符挂起
     if ((revents_ & POLLHUP) && !(revents_ & POLLIN)) {
@@ -43,7 +43,7 @@ void Channel::handleEvent() {
     }
     //可读事件
     if (revents_ & (POLLIN | POLLPRI)) {
-        if (readCallback_) readCallback_();
+        if (readCallback_) readCallback_(receive_time);
     }
     //可写事件
     if (revents_ & POLLOUT) {

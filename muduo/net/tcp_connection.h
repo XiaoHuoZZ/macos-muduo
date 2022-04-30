@@ -11,6 +11,7 @@
 #include "muduo/net/socket.h"
 #include "muduo/net/inet_address.h"
 #include "muduo/net/callbacks.h"
+#include "muduo/net/buffer.h"
 
 namespace muduo::net {
 
@@ -37,13 +38,14 @@ namespace muduo::net {
         ConnectionCallback connectionCallback_;
         MessageCallback messageCallback_;
         CloseCallback closeCallback_;          //内部使用，用来通知TcpServer移除TcpConnection
+        Buffer input_buffer_;                  //输入缓冲
 
         void setState(StateE s) { state_ = s; }
 
         /**
          * 处理数据到来
          */
-        void handleRead();
+        void handleRead(TimeStamp receive_time);
 
         /**
          * 主要功能是调用closeCallback_
@@ -88,6 +90,10 @@ namespace muduo::net {
         void setCloseCallback(const CloseCallback &cb) { closeCallback_ = cb; }
 
         EventLoop *getLoop() { return loop_; }
+
+        bool connected() const { return state_ == kConnected; }
+
+        bool disconnected() const { return state_ == kDisconnected; }
 
         /**
          * 状态字符串

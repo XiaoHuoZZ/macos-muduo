@@ -18,7 +18,7 @@ TcpConnection::TcpConnection(EventLoop *loop, std::string name, Socket &&socket,
     /**
      * 设置一些回调
      */
-    channel_->setReadCallback([this] { handleRead(); });
+    channel_->setReadCallback([this](TimeStamp receive_time) { handleRead(receive_time); });
 
     //开启TCP心跳
     socket_.setKeepAlive(true);
@@ -26,19 +26,21 @@ TcpConnection::TcpConnection(EventLoop *loop, std::string name, Socket &&socket,
     LOG_TRACE("TcpConnection::ctor[{}] at fd = {}", name_, socket_.fd());
 }
 
-void TcpConnection::handleRead() {
-    char buf[65536];
-    ssize_t n = ::read(channel_->fd(), buf, sizeof buf);
+void TcpConnection::handleRead(TimeStamp receive_time) {
+    int savedErrno = 0;
+    ssize_t n = input_buffer_.readFd(channel_->fd(), &savedErrno);
+
     /**
      * 还未实现应用层buffer
      */
     if (n > 0) {
-        LOG_INFO("有数据到来");
+        messageCallback_(shared_from_this(), &input_buffer_, receive_time);
     }
         //读到了EOF,证明对方关闭了输出流
     else if (n == 0) {
         handleClose();
     } else {
+        errno = savedErrno;
         handleError();
     }
 }

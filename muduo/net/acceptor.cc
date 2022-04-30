@@ -14,7 +14,7 @@ Acceptor::Acceptor(muduo::net::EventLoop *loop, const muduo::net::InetAddress &l
     //绑定地址
     accept_socket_.bindAddress(listen_addr);
     //设置channel回调，处理连接到来的事件
-    accept_channel_.setReadCallback([this] { handleRead(); });
+    accept_channel_.setReadCallback([this](TimeStamp receive_time) { handleRead(); });
 }
 
 void Acceptor::listen() {

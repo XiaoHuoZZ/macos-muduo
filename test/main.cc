@@ -5,6 +5,7 @@
 #include "muduo/net/socket.h"
 #include "muduo/net/acceptor.h"
 #include "muduo/net/tcp_server.h"
+#include "muduo/net/buffer.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
@@ -53,26 +54,6 @@ void testRunInLoop(EventLoop* loop) {
     });
 }
 
-void testSocket() {
-    EventLoop loop;
-
-    Socket sock;
-    InetAddress address(8888);
-    InetAddress client_addr(0);
-
-    sock.bindAddress(address);
-    sock.listen();
-
-    Channel acceptChannel(&loop, sock.fd());
-    acceptChannel.enableReading();
-    acceptChannel.setReadCallback([&]{
-        auto data_sock = sock.accept(&client_addr);
-        LOG_INFO(data_sock.fd());
-        LOG_INFO(client_addr.ipv4());
-    });
-
-    loop.loop();
-}
 
 void testAcceptor() {
     EventLoop loop;
@@ -86,18 +67,26 @@ void testAcceptor() {
     loop.loop();
 }
 
+void testServer() {
+    EventLoop loop;
+    InetAddress listen_addr(9999);
+    TcpServer server(&loop, listen_addr, "server");
+    server.setConnectionCallback([](const TcpConnectionPtr& ptr) {
+        LOG_INFO("connection {}", ptr->connected());
+    });
+    server.setMessageCallback([](const TcpConnectionPtr& ptr, Buffer* buffer, muduo::TimeStamp receive_time){
+        LOG_INFO(buffer->retrieveAllAsString());
+    });
+    server.start();
+    loop.loop();
+}
+
 
 int main() {
 
     spdlog::set_level(spdlog::level::trace); // Set global log level to debug
 
-    EventLoop loop;
-    InetAddress listen_addr(9999);
-    TcpServer server(&loop, listen_addr, "server");
-    server.setConnectionCallback([](const TcpConnectionPtr& ptr) {
-    });
-    server.start();
-    loop.loop();
+    testServer();
 
     return 0;
 }
