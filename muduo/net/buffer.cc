@@ -38,8 +38,7 @@ void Buffer::makeSpace(size_t len) {
 }
 
 void Buffer::ensureWritableBytes(size_t len) {
-    if (writableBytes() < len)
-    {
+    if (writableBytes() < len) {
         makeSpace(len);
     }
     assert(writableBytes() >= len);
@@ -58,7 +57,7 @@ void Buffer::shrink(size_t reserve) {
      * 这样可以保证prependable的空间回到初始kCheapPrepend，并且shrink后的readable + writable空间至少有kInitialSize
      */
     Buffer other;
-    other.ensureWritableBytes(readableBytes()+reserve);
+    other.ensureWritableBytes(readableBytes() + reserve);
     other.append(buffer_.data() + read_idx_, readableBytes());
     swap(other);
 }
@@ -70,7 +69,7 @@ void Buffer::append(const char *data, size_t len) {
 }
 
 void Buffer::append(const void *data, size_t len) {
-    append(static_cast<const char*>(data), len);
+    append(static_cast<const char *>(data), len);
 }
 
 void Buffer::append(const std::string &str) {
@@ -84,12 +83,9 @@ void Buffer::retrieveAll() {
 
 void Buffer::retrieve(size_t len) {
     assert(len <= readableBytes());
-    if (len < readableBytes())
-    {
+    if (len < readableBytes()) {
         read_idx_ += len;
-    }
-    else
-    {
+    } else {
         retrieveAll();        //两个指针归位kCheapPrepend
     }
 }
@@ -124,21 +120,24 @@ ssize_t Buffer::readFd(int fd, int *savedErrno) {
     //读进iovec
     const size_t n = ::readv(fd, vec, 2);
 
-    if (n < 0)
-    {
+    if (n < 0) {
         *savedErrno = errno;
     }
-    //如果只读进buffer
-    else if (n <= writable)
-    {
+        //如果只读进buffer
+    else if (n <= writable) {
         write_idx_ += n;
-    }
-    else
-    {
+    } else {
         write_idx_ = buffer_.size();
         append(extrabuf, n - writable);
     }
     return n;
+}
+
+void Buffer::prepend(const void *data, size_t len) {
+    assert(len <= prependableBytes());
+    read_idx_ -= len;
+    const char *d = static_cast<const char *>(data);
+    std::copy(d, d + len, buffer_.data() + read_idx_);
 }
 
 

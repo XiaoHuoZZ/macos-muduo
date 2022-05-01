@@ -60,6 +60,13 @@ namespace muduo::net {
         void append(const std::string& str);
 
         /**
+         * 前置插入
+         * @param data
+         * @param len
+         */
+        void prepend(const void* data, size_t len);
+
+        /**
          * 确保能写入len字节数据
          * @param len
          */

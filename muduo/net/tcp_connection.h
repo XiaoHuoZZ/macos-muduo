@@ -26,19 +26,20 @@ namespace muduo::net {
          * 连接状态
          */
         enum StateE {
-            kConnecting, kConnected, kDisconnected
+            kConnecting, kConnected, kDisconnecting, kDisconnected
         };
 
         EventLoop *loop_;                       //注册到哪个Eventloop
         std::string name_;                     //连接名字
         std::atomic<StateE> state_;            //连接装填
-        Socket socket_;                         //持有的socket
+        std::unique_ptr<Socket> socket_;                         //持有的socket
         std::unique_ptr<Channel> channel_;      //持有的channel
         InetAddress local_addr_, peer_addr_;
         ConnectionCallback connectionCallback_;
         MessageCallback messageCallback_;
         CloseCallback closeCallback_;          //内部使用，用来通知TcpServer移除TcpConnection
         Buffer input_buffer_;                  //输入缓冲
+        Buffer output_buffer_;                 //输出缓冲
 
         void setState(StateE s) { state_ = s; }
 
@@ -48,8 +49,8 @@ namespace muduo::net {
         void handleRead(TimeStamp receive_time);
 
         /**
-         * 主要功能是调用closeCallback_
-         * 通知TcpServer/TcpClient移除它们所持有的TcpConnection
+         * 处理连接关闭事宜
+         * 主要功能是调用closeCallback_，通知TcpServer/TcpClient移除它们所持有的TcpConnection
          */
         void handleClose();
 
@@ -57,6 +58,10 @@ namespace muduo::net {
          * 处理错误
          */
         void handleError();
+
+        void sendInLoop(const std::string& message);
+
+        void shutdownInLoop();
 
     public:
 
@@ -111,8 +116,8 @@ namespace muduo::net {
 
         /**
          * 处理连接关闭前的一些事务
-         * 例如取消channel监听，移除channel
          * 这是TcpConnection 析构之前最后执行的一个函数
+         * 还肩负着延长connection生命周期的作用， 具体看TcpServer::removeChannel
          */
         void connectDestroyed();
 
@@ -121,6 +126,18 @@ namespace muduo::net {
          * 事实上就是调用handleClose
          */
         void forceClose();
+
+
+        /**
+         * 发送消息
+         * @param message
+         */
+        void send(const std::string& message);
+
+        /**
+         * 半关闭写端
+         */
+        void shutdown();
     };
 
     using TcpConnectionPtr = std::shared_ptr<TcpConnection>;

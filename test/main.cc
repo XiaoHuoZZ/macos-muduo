@@ -76,6 +76,8 @@ void testServer() {
     });
     server.setMessageCallback([](const TcpConnectionPtr& ptr, Buffer* buffer, muduo::TimeStamp receive_time){
         LOG_INFO(buffer->retrieveAllAsString());
+//        ptr->forceClose();
+//        ptr->forceClose();
     });
     server.start();
     loop.loop();

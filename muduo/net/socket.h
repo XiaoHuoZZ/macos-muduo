@@ -35,6 +35,9 @@ namespace muduo::net {
             return *this;
         }
 
+        /**
+         * 析构时会自动close socket fd
+         */
         ~Socket();
 
         int fd() const { return fd_; }

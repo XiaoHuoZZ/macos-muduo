@@ -78,6 +78,21 @@ namespace muduo::net {
             update();
         }
 
+        void disableReading() {
+            events_ &= ~kReadEvent;
+            update();
+        }
+
+        void enableWriting() {
+            events_ |= kWriteEvent;
+            update();
+        }
+
+        void disableWriting() {
+            events_ &= ~kWriteEvent;
+            update();
+        }
+
         /**
          * 该fd不关心任何事件，并通知EventLoop
          */
@@ -85,6 +100,18 @@ namespace muduo::net {
             events_ = kNoneEvent;
             update();
         }
+
+        /**
+         * 是否目前正在写
+         * @return
+         */
+        bool isWriting() const { return events_ & kWriteEvent; }
+
+        /**
+         * 是否目前正在读
+         * @return
+         */
+        bool isReading() const { return events_ & kReadEvent; }
 
         int index() const { return index_; }
 

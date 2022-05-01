@@ -18,7 +18,7 @@ namespace muduo::net {
 
     class Channel;
 
-    class Acceptor {
+    class Acceptor : noncopyable {
     public:
         using NewConnCallback = std::function<
         void(Socket
