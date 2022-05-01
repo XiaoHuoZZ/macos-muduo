@@ -102,13 +102,13 @@ namespace muduo::net {
         }
 
         /**
-         * 是否目前正在写
+         * 是否目前正在监听可写事件
          * @return
          */
         bool isWriting() const { return events_ & kWriteEvent; }
 
         /**
-         * 是否目前正在读
+         * 是否目前正在监听可读事件
          * @return
          */
         bool isReading() const { return events_ & kReadEvent; }

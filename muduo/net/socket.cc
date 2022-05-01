@@ -84,6 +84,13 @@ void Socket::setKeepAlive(bool on) const {
     }
 }
 
+void Socket::shutdownWrite() {
+    if (::shutdown(fd_, SHUT_WR) < 0)
+    {
+        LOG_ERROR("sockets::shutdownWrite {}", fd_);
+    }
+}
+
 
 
 

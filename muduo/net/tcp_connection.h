@@ -49,6 +49,12 @@ namespace muduo::net {
         void handleRead(TimeStamp receive_time);
 
         /**
+         * 一旦可写事件就绪
+         * 立即将遗留在output buffer 的数据发送出去
+         */
+        void handleWrite();
+
+        /**
          * 处理连接关闭事宜
          * 主要功能是调用closeCallback_，通知TcpServer/TcpClient移除它们所持有的TcpConnection
          */
@@ -59,8 +65,16 @@ namespace muduo::net {
          */
         void handleError();
 
-        void sendInLoop(const std::string& message);
+        /**
+         * 在IO线程中发送数据
+         * @param data
+         * @param len
+         */
+        void sendInLoop(const void* data, size_t len);
 
+        /**
+         * 在IO线程中半关闭
+         */
         void shutdownInLoop();
 
     public:

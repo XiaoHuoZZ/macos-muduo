@@ -78,6 +78,11 @@ namespace muduo::net {
          * @param on
          */
         void setKeepAlive(bool on) const;
+
+        /**
+         * 关闭输出流
+         */
+        void shutdownWrite();
     };
 }
 

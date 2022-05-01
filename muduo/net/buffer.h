@@ -46,25 +46,31 @@ namespace muduo::net {
         void swap(Buffer &rhs);
 
         /**
+         * 返回buffer可读首地址
+         * @return
+         */
+        char *peek() { return buffer_.data() + read_idx_; }
+
+        /**
          * 尽可能读取fd里面的所有数据
          * @param fd
          * @param savedErrno
          * @return
          */
-        ssize_t readFd(int fd, int* savedErrno);
+        ssize_t readFd(int fd, int *savedErrno);
 
-        void append(const char* data, size_t len);
+        void append(const char *data, size_t len);
 
-        void append(const void* data, size_t len);
+        void append(const void *data, size_t len);
 
-        void append(const std::string& str);
+        void append(const std::string &str);
 
         /**
          * 前置插入
          * @param data
          * @param len
          */
-        void prepend(const void* data, size_t len);
+        void prepend(const void *data, size_t len);
 
         /**
          * 确保能写入len字节数据

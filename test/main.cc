@@ -75,9 +75,9 @@ void testServer() {
         LOG_INFO("connection {}", ptr->connected());
     });
     server.setMessageCallback([](const TcpConnectionPtr& ptr, Buffer* buffer, muduo::TimeStamp receive_time){
-        LOG_INFO(buffer->retrieveAllAsString());
-//        ptr->forceClose();
-//        ptr->forceClose();
+        auto tmp = buffer->retrieveAllAsString();
+        LOG_INFO(tmp);
+        ptr->send(tmp);
     });
     server.start();
     loop.loop();
@@ -86,7 +86,7 @@ void testServer() {
 
 int main() {
 
-    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+//    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
 
     testServer();
 

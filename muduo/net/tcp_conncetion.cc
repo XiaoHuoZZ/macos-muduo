@@ -115,9 +115,13 @@ void TcpConnection::handleError() {
 void TcpConnection::forceClose() {
     if (state_ == kConnected || state_ == kDisconnecting) {
         setState(kDisconnecting);
+
+        /**
+         * 这里不使用shared_from_this
+         * 因为我不认为执行执行runInLoop时TcpConnection会被析构
+         */
         loop_->runInLoop([this] {
-            loop_->assertInLoopThread();
-            //需要再判断一次，因为该lamda函数可能是放入pending队列中延迟执行
+            //需要再判断一次，因为该lambda函数可能是放入pending队列中延迟执行，防止执行多次handleClose
             if (state_ == kConnected || state_ == kDisconnecting) {
                 handleClose();
             }
@@ -127,14 +131,110 @@ void TcpConnection::forceClose() {
 }
 
 void TcpConnection::shutdown() {
+    //exchange防止shutdown多次
     if (state_.exchange(kDisconnecting) == kConnected) {
         loop_->runInLoop([this] {
-           loop_->assertInLoopThread();
-           if (!channel_->isWriting()) {
-
-           }
+            shutdownInLoop();
         });
     }
 }
+
+void TcpConnection::shutdownInLoop() {
+    loop_->assertInLoopThread();
+    /**
+     * 即使状态进入了kDisconnecting, 可能还没有真正关闭写入
+     * 因为可能output_buffer_中还有数据未发送出去
+     */
+    if (!channel_->isWriting()) {
+        socket_->shutdownWrite();
+    }
+}
+
+void TcpConnection::send(const std::string &message) {
+    if (state_ == kConnected) {
+        if (loop_->isInLoopThread()) {
+            sendInLoop(message.data(), message.size());        //省略一次message拷贝
+        }
+            //否则需要拷贝一份message到IO线程
+        else {
+            loop_->runInLoop([this, message] {
+                sendInLoop(message.data(), message.size());
+            });
+        }
+    }
+}
+
+void TcpConnection::sendInLoop(const void *data, size_t len) {
+    loop_->assertInLoopThread();
+    ssize_t n_wrote = 0;         //记录已写数据长度
+
+    if (state_ == kDisconnected) {
+        LOG_ERROR("disconnected, give up writing");
+        return;
+    }
+
+    //如果是第一次写（未关注写事件并且output_buffer为空）
+    if (!channel_->isWriting() && output_buffer_.readableBytes() == 0) {
+        n_wrote = ::write(channel_->fd(), data, len);
+        if (n_wrote >= 0) {
+            //一次未写完
+            if (n_wrote < len) {
+                LOG_TRACE("write not complete fd = {}", socket_->fd());
+            }
+        }
+            //写入错误
+        else {
+            n_wrote = 0;
+            if (errno != EWOULDBLOCK) {              //EWOULDBLOCK不是错误
+                LOG_ERROR("TcpConnection::sendInLoop fd = {}", socket_->fd());
+            }
+        }
+    }
+
+    assert(n_wrote >= 0);
+    //说明一次未写完，将未写完的数据放入buffer中
+    if (n_wrote < len) {
+        output_buffer_.append(static_cast<const char *>(data) + n_wrote, len - n_wrote);
+        //开始监听可写事件
+        if (!channel_->isWriting()) {
+            channel_->enableWriting();
+        }
+    }
+}
+
+void TcpConnection::handleWrite() {
+    loop_->assertInLoopThread();
+    if (channel_->isWriting()) {
+
+        //写入socket fd
+        ssize_t n = ::write(channel_->fd(), output_buffer_.peek(), output_buffer_.readableBytes());
+
+        if (n > 0) {
+            output_buffer_.retrieve(n);
+            //如果缓冲区已经为空,立即关闭监听写事件，防止busy loop
+            if (output_buffer_.readableBytes() == 0) {
+                channel_->disableWriting();
+                //如果现在TCP连接处于KDisConnecting，需要继续关闭流程
+                if (state_ == kDisconnecting) {
+                    shutdownInLoop();
+                }
+            }
+            else {
+                LOG_TRACE("write not complete fd = {}", socket_->fd());
+            }
+        }
+        //写入失败
+        else {
+            LOG_ERROR("TcpConnection::handleWrite fd = {}", socket_->fd());
+        }
+
+    }
+    //可能在别的地方关闭了写事件，因一次channel可以分发多个事件
+    else {
+        LOG_TRACE("Connection fd = {} is down, no more writing", socket_->fd());
+    }
+}
+
+
 
 

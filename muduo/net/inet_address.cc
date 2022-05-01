@@ -24,8 +24,6 @@ sockaddr_in InetAddress::createStruct(const std::string& ipv4, int port) {
         LOG_ERROR("ipv4 {} invalid", ipv4);
     }
 
-//    tmp.sin_addr.s_addr = htonl(INADDR_ANY);
-
     tmp.sin_port = htons(port);
 
     return tmp;
