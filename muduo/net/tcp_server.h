@@ -9,7 +9,6 @@
 #include "muduo/net/callbacks.h"
 #include "muduo/net/tcp_connection.h"
 #include <unordered_map>
-#include <iostream>
 
 namespace muduo::net {
 

@@ -6,7 +6,6 @@
 #define MACOS_MUDUO_TCP_CONNECTION_H
 
 #include <memory>
-#include <iostream>
 #include "muduo/base/utils.h"
 #include "muduo/net/socket.h"
 #include "muduo/net/inet_address.h"
