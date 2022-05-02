@@ -7,6 +7,8 @@
 #define MACOS_MUDUO_BUFFER_H
 
 #include <vector>
+#include <string>
+#include <cassert>
 
 namespace muduo::net {
 

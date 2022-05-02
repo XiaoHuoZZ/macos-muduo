@@ -2,6 +2,7 @@
 #include "muduo/net/event_loop.h"
 #include "muduo/net/poller.h"
 #include "muduo/net/channel.h"
+#include <csignal>
 
 using muduo::net::EventLoop;
 using muduo::net::Channel;
