@@ -118,7 +118,7 @@ ssize_t Buffer::readFd(int fd, int *savedErrno) {
     vec[1].iov_len = sizeof extrabuf;
 
     //读进iovec
-    const size_t n = ::readv(fd, vec, 2);
+    const ssize_t n = ::readv(fd, vec, 2);
 
     if (n < 0) {
         *savedErrno = errno;

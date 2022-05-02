@@ -72,12 +72,13 @@ void testServer() {
     InetAddress listen_addr(9999);
     TcpServer server(&loop, listen_addr, "server");
     server.setConnectionCallback([](const TcpConnectionPtr& ptr) {
-        LOG_INFO("connection {}", ptr->connected());
+        if (ptr->connected()) {
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            ptr->send("1231");
+            ptr->send("123123");
+        }
     });
     server.setMessageCallback([](const TcpConnectionPtr& ptr, Buffer* buffer, muduo::TimeStamp receive_time){
-        auto tmp = buffer->retrieveAllAsString();
-        LOG_INFO(tmp);
-        ptr->send(tmp);
     });
     server.start();
     loop.loop();
@@ -86,7 +87,7 @@ void testServer() {
 
 int main() {
 
-//    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
 
     testServer();
 

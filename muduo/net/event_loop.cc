@@ -10,6 +10,18 @@ using muduo::net::Channel;
 namespace {
     //记录本线程的唯一EventLoop对象
     thread_local EventLoop *loop_in_this_thread = nullptr;
+
+    class IgnoreSigPipe
+    {
+    public:
+        IgnoreSigPipe()
+        {
+            ::signal(SIGPIPE, SIG_IGN);
+            LOG_TRACE("ignore SIGPIPE");
+        }
+    };
+    //设置全局静态变量，忽略SIGPIPE信号
+    IgnoreSigPipe ignore;
 }
 
 //默认超时时间
