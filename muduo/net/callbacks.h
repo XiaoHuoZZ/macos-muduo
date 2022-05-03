@@ -20,6 +20,8 @@ namespace muduo::net {
                                                TimeStamp)>;
     //内部使用
     using CloseCallback = std::function<void(const TcpConnectionPtr &)>;
+    using WriteCompleteCallback = std::function<void (const TcpConnectionPtr&)>;
+    using HighWaterMarkCallback = std::function<void (const TcpConnectionPtr&, size_t)>;
 }
 
 #endif //MACOS_MUDUO_CALLBACKS_H

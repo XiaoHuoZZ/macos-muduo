@@ -36,9 +36,12 @@ namespace muduo::net {
         InetAddress local_addr_, peer_addr_;
         ConnectionCallback connectionCallback_;
         MessageCallback messageCallback_;
-        CloseCallback closeCallback_;          //内部使用，用来通知TcpServer移除TcpConnection
-        Buffer input_buffer_;                  //输入缓冲
-        Buffer output_buffer_;                 //输出缓冲
+        CloseCallback closeCallback_;                     //内部使用，用来通知TcpServer移除TcpConnection
+        WriteCompleteCallback writeCompleteCallback_;    //写完成回调，用于控制发出速度
+        HighWaterMarkCallback highWaterMarkCallback_;     //output_buffer_高水位回到，用于控制发出速度
+        size_t high_water_mark_;                            //output_buffer水位阈值
+        Buffer input_buffer_;                            //输入缓冲
+        Buffer output_buffer_;                           //输出缓冲
 
         void setState(StateE s) { state_ = s; }
 
@@ -69,7 +72,7 @@ namespace muduo::net {
          * @param data
          * @param len
          */
-        void sendInLoop(const void* data, size_t len);
+        void sendInLoop(const void *data, size_t len);
 
         /**
          * 在IO线程中半关闭
@@ -106,6 +109,23 @@ namespace muduo::net {
          * @param cb
          */
         void setCloseCallback(const CloseCallback &cb) { closeCallback_ = cb; }
+
+        /**
+         * 设置发送缓冲区清空的回调
+         * 常用于匹配速度
+         * @param cb
+         */
+        void setWriteCompleteCallback(const WriteCompleteCallback &cb) { writeCompleteCallback_ = cb; }
+
+        /**
+         * 设置发送缓冲区到达阈值的回调
+         * 常用于匹配速度
+         * @param cb
+         */
+        void setHighWaterMarkCallback(const HighWaterMarkCallback &cb, size_t high_water_mark) {
+            highWaterMarkCallback_ = cb;
+            high_water_mark_ = high_water_mark;
+        }
 
         EventLoop *getLoop() { return loop_; }
 
@@ -145,7 +165,7 @@ namespace muduo::net {
          * 发送消息
          * @param message
          */
-        void send(const std::string& message);
+        void send(const std::string &message);
 
         /**
          * 半关闭写端

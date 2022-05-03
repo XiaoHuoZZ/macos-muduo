@@ -72,11 +72,20 @@ void testServer() {
     InetAddress listen_addr(9999);
     TcpServer server(&loop, listen_addr, "server");
     server.setConnectionCallback([](const TcpConnectionPtr& ptr) {
-        if (ptr->connected()) {
-            ptr->shutdown();
-        }
+        ptr->setHighWaterMarkCallback([](const TcpConnectionPtr& ptr, size_t len){
+            LOG_INFO("high water len = {}", len);
+            }, 1000);
     });
     server.setMessageCallback([](const TcpConnectionPtr& ptr, Buffer* buffer, muduo::TimeStamp receive_time){
+        std::string tmp = buffer->retrieveAllAsString();
+        LOG_INFO("time = {} content = {}", receive_time, tmp);
+        for (int i = 0; i < 10000000; i++) {
+            tmp += ',';
+        }
+        ptr->send(tmp);
+    });
+    server.setWriteCompleteCallback([](const TcpConnectionPtr& ptr) {
+        LOG_INFO("write complete");
     });
     server.start();
     loop.loop();
@@ -85,7 +94,7 @@ void testServer() {
 
 int main() {
 
-    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+//    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
 
     testServer();
 

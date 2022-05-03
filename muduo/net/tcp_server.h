@@ -30,6 +30,8 @@ namespace muduo::net {
         std::unique_ptr<Acceptor> acceptor_;        //使用指针方式持有Acceptor
         ConnectionCallback connectionCallback_;
         MessageCallback messageCallback_;
+        WriteCompleteCallback writeCompleteCallback_;    //写完成回调，用于控制发出速度
+        HighWaterMarkCallback highWaterMarkCallback_;    //高水位回调，用于控制发出速度
         AtomicBool started_;
         int next_conn_id_;
         ConnectionMap connections_;                 //所管理的连接，key是连接的名字，每个连接都有一个名字
@@ -63,10 +65,18 @@ namespace muduo::net {
         void setMessageCallback(const MessageCallback &cb) { messageCallback_ = cb; }
 
         /**
+         * 设置发送缓冲区清空的回调
+         * 常用于匹配速度
+         * @param cb
+         */
+        void setWriteCompleteCallback(const WriteCompleteCallback &cb) { writeCompleteCallback_ = cb; }
+
+
+        /**
          * 移除一个TCP连接
          * @param conn
          */
-        void removeConnection(const TcpConnectionPtr& conn);
+        void removeConnection(const TcpConnectionPtr &conn);
 
 
     };

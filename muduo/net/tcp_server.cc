@@ -50,6 +50,7 @@ void TcpServer::newConnection(Socket &&socket, const InetAddress &peer_addr) {
     connections_[conn_name] = conn;
     conn->setConnectionCallback(connectionCallback_);
     conn->setMessageCallback(messageCallback_);
+    conn->setWriteCompleteCallback(writeCompleteCallback_);
     conn->setCloseCallback([this](const TcpConnectionPtr& ptr) {
         removeConnection(ptr);
     });

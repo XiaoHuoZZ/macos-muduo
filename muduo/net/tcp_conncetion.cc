@@ -14,11 +14,15 @@ TcpConnection::TcpConnection(EventLoop *loop, std::string name, Socket &&socket,
           socket_(std::make_unique<Socket>(std::move(socket))),
           channel_(std::make_unique<Channel>(loop, socket_->fd())),
           local_addr_(local_addr),
-          peer_addr_(peer_addr) {
+          peer_addr_(peer_addr),
+          high_water_mark_(64*1024*1024){
     /**
      * 设置一些回调
      */
     channel_->setReadCallback([this](TimeStamp receive_time) { handleRead(receive_time); });
+    channel_->setWriteCallback([this] { handleWrite(); });
+    channel_->setErrorCallback([this] { handleError(); });
+    channel_->setCloseCallback([this] { handleClose(); });
 
     //开启TCP心跳
     socket_->setKeepAlive(true);
@@ -109,7 +113,7 @@ void TcpConnection::connectDestroyed() {
 }
 
 void TcpConnection::handleError() {
-    LOG_ERROR("TcpConnection Read Error {}", socket_->fd());
+    LOG_ERROR("TcpConnection Error {}", socket_->fd());
 }
 
 void TcpConnection::forceClose() {
@@ -182,6 +186,10 @@ void TcpConnection::sendInLoop(const void *data, size_t len) {
             if (n_wrote < len) {
                 LOG_TRACE("write not complete fd = {}", socket_->fd());
             }
+                //一次写完
+            else if (writeCompleteCallback_) {
+                writeCompleteCallback_(shared_from_this());
+            }
         }
             //写入错误
         else {
@@ -195,7 +203,18 @@ void TcpConnection::sendInLoop(const void *data, size_t len) {
     assert(n_wrote >= 0);
     //说明一次未写完，将未写完的数据放入buffer中
     if (n_wrote < len) {
-        output_buffer_.append(static_cast<const char *>(data) + n_wrote, len - n_wrote);
+        /**
+         * 保证只触发一次高水位回调
+         */
+        size_t remaining = len - n_wrote;
+        size_t old_len = output_buffer_.readableBytes();
+        if (old_len + remaining >= high_water_mark_ && old_len < high_water_mark_ && highWaterMarkCallback_) {
+            highWaterMarkCallback_(shared_from_this(), old_len + remaining);
+        }
+
+        //添加进output_buffer
+        output_buffer_.append(static_cast<const char *>(data) + n_wrote, remaining);
+
         //开始监听可写事件
         if (!channel_->isWriting()) {
             channel_->enableWriting();
@@ -215,22 +234,25 @@ void TcpConnection::handleWrite() {
             //如果缓冲区已经为空,立即关闭监听写事件，防止busy loop
             if (output_buffer_.readableBytes() == 0) {
                 channel_->disableWriting();
+                //缓冲被清空，回调
+                if (writeCompleteCallback_) {
+                    writeCompleteCallback_(shared_from_this());
+                }
                 //如果现在TCP连接处于KDisConnecting，需要继续关闭流程
                 if (state_ == kDisconnecting) {
                     shutdownInLoop();
                 }
-            }
-            else {
+            } else {
                 LOG_TRACE("write not complete fd = {}", socket_->fd());
             }
         }
-        //写入失败
+            //写入失败
         else {
             LOG_ERROR("TcpConnection::handleWrite fd = {}", socket_->fd());
         }
 
     }
-    //可能在别的地方关闭了写事件，因一次channel可以分发多个事件
+        //可能在别的地方关闭了写事件，因一次channel可以分发多个事件
     else {
         LOG_TRACE("Connection fd = {} is down, no more writing", socket_->fd());
     }
