@@ -32,8 +32,9 @@ void EventLoopThread::threadFun() {
 EventLoop *EventLoopThread::startLoop() {
     assert(!thread_.joinable());
     auto future = promise_.get_future();
+    //启动线程
     thread_ = std::thread(&EventLoopThread::threadFun, this);
-    //等待EventLoop创建完成
+    //等待threadFun中EventLoop创建完成
     loop_ =  future.get();
     return loop_;
 }

@@ -20,6 +20,9 @@ void EventLoopThreadPool::start() {
 
     started_ = true;
 
+    /**
+     * 创建num_threads个线程
+     */
     for (int i = 0; i < num_threads_; ++i) {
         auto *t = new EventLoopThread(name_);
         threads_.push_back(std::unique_ptr<EventLoopThread>(t));
@@ -36,7 +39,7 @@ EventLoop *EventLoopThreadPool::getNextLoop() {
 
     if (!loops_.empty())
     {
-        loop = loops_[++next_];
+        loop = loops_[next_++];
         if (next_ >= loops_.size())
         {
             next_ = 0;
