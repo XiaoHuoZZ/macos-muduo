@@ -16,22 +16,25 @@ namespace muduo::net {
 
     class EventLoop;
 
+    class EventLoopThreadPool;
+
     class Acceptor;
 
     class Socket;
+
 
     class TcpServer : noncopyable {
     private:
 
         using ConnectionMap = std::unordered_map<std::string, TcpConnectionPtr>;
 
-        EventLoop *loop_;                           //Acceptor的eventloop
+        EventLoop *loop_;                                    //Acceptor的EventLoop, 也是主EventLoop
         const std::string name_;
-        std::unique_ptr<Acceptor> acceptor_;        //使用指针方式持有Acceptor
+        std::unique_ptr<Acceptor> acceptor_;                  //使用指针方式持有Acceptor
+        std::unique_ptr<EventLoopThreadPool> thread_pool_;    //持有的多个EventLoop线程，它们专门用于IO数据传输
         ConnectionCallback connectionCallback_;
         MessageCallback messageCallback_;
         WriteCompleteCallback writeCompleteCallback_;    //写完成回调，用于控制发出速度
-        HighWaterMarkCallback highWaterMarkCallback_;    //高水位回调，用于控制发出速度
         AtomicBool started_;
         int next_conn_id_;
         ConnectionMap connections_;                 //所管理的连接，key是连接的名字，每个连接都有一个名字
@@ -43,6 +46,12 @@ namespace muduo::net {
          * @param peer_addr
          */
         void newConnection(Socket &&socket, const InetAddress &peer_addr);
+
+        /**
+         * 在主EventLoop中执行removeConnection
+         * @param conn
+         */
+        void removeConnectionInLoop(const TcpConnectionPtr& conn);
 
     public:
 
@@ -56,6 +65,7 @@ namespace muduo::net {
 
         /**
          * 服务器开启监听
+         * 并创建多线程（如果有设置）
          * 线程安全，可以调用多次
          */
         void start();
@@ -70,6 +80,14 @@ namespace muduo::net {
          * @param cb
          */
         void setWriteCompleteCallback(const WriteCompleteCallback &cb) { writeCompleteCallback_ = cb; }
+
+        /**
+         * 设置TcpServer线程数量
+         * 0 代表没有线程创建  监听连接以及所有其他IO都在主EventLoop中完成
+         * >0  创建num个线程及EventLoop
+         * @param num
+         */
+        void setThreadNum(int num);
 
 
         /**

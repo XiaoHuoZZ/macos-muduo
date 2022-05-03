@@ -1,6 +1,5 @@
 #include <iostream>
-#include "muduo/net/event_loop.h"
-#include "muduo/net/channel.h"
+#include "muduo/net/eventloop.h"
 #include "muduo/net/inet_address.h"
 #include "muduo/net/socket.h"
 #include "muduo/net/acceptor.h"
@@ -8,6 +7,7 @@
 #include "muduo/net/buffer.h"
 #include <arpa/inet.h>
 #include <sys/socket.h>
+
 
 using namespace muduo::net;
 
@@ -72,29 +72,24 @@ void testServer() {
     InetAddress listen_addr(9999);
     TcpServer server(&loop, listen_addr, "server");
     server.setConnectionCallback([](const TcpConnectionPtr& ptr) {
-        ptr->setHighWaterMarkCallback([](const TcpConnectionPtr& ptr, size_t len){
-            LOG_INFO("high water len = {}", len);
-            }, 1000);
     });
     server.setMessageCallback([](const TcpConnectionPtr& ptr, Buffer* buffer, muduo::TimeStamp receive_time){
         std::string tmp = buffer->retrieveAllAsString();
-        LOG_INFO("time = {} content = {}", receive_time, tmp);
-        for (int i = 0; i < 10000000; i++) {
-            tmp += ',';
-        }
+        LOG_INFO("{} {}", std::this_thread::get_id(), tmp);
         ptr->send(tmp);
     });
-    server.setWriteCompleteCallback([](const TcpConnectionPtr& ptr) {
-        LOG_INFO("write complete");
-    });
+    server.setThreadNum(2);
     server.start();
     loop.loop();
 }
 
 
+
 int main() {
 
 //    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+
+    LOG_INFO(std::this_thread::get_id());
 
     testServer();
 
