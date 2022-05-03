@@ -4,6 +4,7 @@
 #include <muduo/base/logger.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <netinet/tcp.h>
 
 using muduo::net::Socket;
 using muduo::net::InetAddress;
@@ -88,6 +89,15 @@ void Socket::shutdownWrite() {
     if (::shutdown(fd_, SHUT_WR) < 0)
     {
         LOG_ERROR("sockets::shutdownWrite {}", fd_);
+    }
+}
+
+void Socket::setTcpNoDelay(bool on) const {
+    int opt = on ? 1 : 0;
+    int res = ::setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY,
+                           &opt, static_cast<socklen_t>(sizeof opt));
+    if (res == -1) {
+        LOG_ERROR("socket::setKeepAlive error {}", fd_);
     }
 }
 

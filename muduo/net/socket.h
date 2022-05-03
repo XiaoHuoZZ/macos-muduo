@@ -80,6 +80,13 @@ namespace muduo::net {
         void setKeepAlive(bool on) const;
 
         /**
+         * 是否设置socket TCP_NODELAY
+         * 开启之后可以关闭Nagle算法，避免连续发包出现延迟
+         * @param on
+         */
+        void setTcpNoDelay(bool on) const;
+
+        /**
          * 关闭输出流
          */
         void shutdownWrite();
