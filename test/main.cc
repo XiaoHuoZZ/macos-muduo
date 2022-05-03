@@ -73,9 +73,7 @@ void testServer() {
     TcpServer server(&loop, listen_addr, "server");
     server.setConnectionCallback([](const TcpConnectionPtr& ptr) {
         if (ptr->connected()) {
-            std::this_thread::sleep_for(std::chrono::seconds(5));
-            ptr->send("1231");
-            ptr->send("123123");
+            ptr->shutdown();
         }
     });
     server.setMessageCallback([](const TcpConnectionPtr& ptr, Buffer* buffer, muduo::TimeStamp receive_time){

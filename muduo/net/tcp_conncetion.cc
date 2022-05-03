@@ -117,13 +117,13 @@ void TcpConnection::forceClose() {
         setState(kDisconnecting);
 
         /**
-         * 这里不使用shared_from_this
-         * 因为我不认为执行执行runInLoop时TcpConnection会被析构
+         * 这里使用shared_from_this
+         * 保证不会执行handleClose时 TcpConnection被析构
          */
-        loop_->runInLoop([this] {
+        loop_->runInLoop([ptr = shared_from_this()] {
             //需要再判断一次，因为该lambda函数可能是放入pending队列中延迟执行，防止执行多次handleClose
-            if (state_ == kConnected || state_ == kDisconnecting) {
-                handleClose();
+            if (ptr->state_ == kConnected || ptr->state_ == kDisconnecting) {
+                ptr->handleClose();
             }
         });
     }
@@ -131,10 +131,11 @@ void TcpConnection::forceClose() {
 }
 
 void TcpConnection::shutdown() {
-    //exchange防止shutdown多次
-    if (state_.exchange(kDisconnecting) == kConnected) {
-        loop_->runInLoop([this] {
-            shutdownInLoop();
+    StateE expect = kConnected;
+    //如果是Connected状态才允许shutdown
+    if (state_.compare_exchange_strong(expect, kDisconnecting)) {
+        loop_->runInLoop([ptr = shared_from_this()] {
+            ptr->shutdownInLoop();
         });
     }
 }
@@ -153,12 +154,12 @@ void TcpConnection::shutdownInLoop() {
 void TcpConnection::send(const std::string &message) {
     if (state_ == kConnected) {
         if (loop_->isInLoopThread()) {
-            sendInLoop(message.data(), message.size());        //省略一次message拷贝
+            sendInLoop(message.data(), message.size());        //省略一次message拷贝和shared_ptr拷贝
         }
             //否则需要拷贝一份message到IO线程
         else {
-            loop_->runInLoop([this, message] {
-                sendInLoop(message.data(), message.size());
+            loop_->runInLoop([ptr = shared_from_this(), message] {
+                ptr->sendInLoop(message.data(), message.size());
             });
         }
     }
