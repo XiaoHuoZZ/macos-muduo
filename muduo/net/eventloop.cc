@@ -31,7 +31,7 @@ const int kPollTimeMs = 20000;
 EventLoop::EventLoop()
         : looping_(false),
           thread_id_(std::this_thread::get_id()),
-          poller_(std::make_unique<Poller>(this)),
+          poller_(Poller::newDefaultPoller(this)),
           quit_(false),
           calling_pending_functors_(false),
           wakeup_fds(createWakeupFd()),
