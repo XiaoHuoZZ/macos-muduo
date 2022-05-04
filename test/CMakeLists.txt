@@ -1,5 +1,5 @@
 
 add_executable(test main.cc)
 
-target_link_libraries(test lib_net)
-target_link_libraries(test lib_base)
+target_link_libraries(test net)
+target_link_libraries(test base)
