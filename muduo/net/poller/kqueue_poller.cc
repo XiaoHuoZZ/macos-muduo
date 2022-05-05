@@ -156,14 +156,13 @@ void KqueuePoller::update(int opt, Channel* channel) {
     }
 }
 
-void KqueuePoller::update_one(int event, int opt, Channel* channel) {
+void KqueuePoller::update_one(int event, int opt, Channel* channel) const {
     struct kevent tmp{};
     EV_SET(&tmp, channel->fd(), event, opt, 0, 0, static_cast<void *>(channel));
 
     //向kqueue应用更改
     int r = kevent(kqueue_fd_, &tmp, 1, nullptr, 0, nullptr);
     if (r == -1) {
-        err(EXIT_FAILURE, "kevent register");
         LOG_ERROR("kqueue::update error");
     }
     if (tmp.flags & EV_ERROR) {

@@ -34,7 +34,7 @@ namespace muduo::net {
          */
         void update(int opt, Channel* channel);
 
-        void update_one(int event, int opt, Channel* channel);
+        void update_one(int event, int opt, Channel* channel) const;
 
     public:
         using ChannelList = std::vector<Channel *>;
