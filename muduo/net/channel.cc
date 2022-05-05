@@ -11,6 +11,12 @@ const int Channel::kNoneEvent = 0;                    //poll里面的无事件
 const int Channel::kReadEvent = POLLIN | POLLPRI;    //poll里面的读事件   POLLPRI代表高优先级读
 const int Channel::kWriteEvent = POLLOUT;            //poll里面的写事件
 
+const int Channel::kEnReadOpt = 1;
+const int Channel::kDisReadOpt = 2;
+const int Channel::kEnWriteOpt = 3;
+const int Channel::kDisWriteOpt = 4;
+const int Channel::kDisAllOpt = 5;
+
 Channel::Channel(EventLoop *loop, int fd)
         : loop_(loop),
           fd_(fd),
@@ -25,9 +31,9 @@ Channel::~Channel() {
     assert(!event_handling_);        //进行事件分发的时候，channel不会被析构
 }
 
-void Channel::update() {
+void Channel::update(int opt) {
     added_to_loop_ = true;
-    loop_->updateChannel(this);
+    loop_->updateChannel(this, opt);
 }
 
 void Channel::handleEvent(TimeStamp receive_time) {

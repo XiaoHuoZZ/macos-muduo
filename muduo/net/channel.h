@@ -17,10 +17,16 @@ namespace muduo::net {
     public:
         using EventCallback = std::function<void()>;
         using ReadEventCallback = std::function<void(TimeStamp)>;
-    private:
         static const int kNoneEvent;
         static const int kReadEvent;
         static const int kWriteEvent;
+
+        static const int kEnReadOpt;
+        static const int kDisReadOpt;
+        static const int kEnWriteOpt;
+        static const int kDisWriteOpt;
+        static const int kDisAllOpt;
+    private:
 
         EventLoop *loop_;     //注册到哪个EventLoop
         const int fd_;        //当前文件描述符
@@ -41,7 +47,7 @@ namespace muduo::net {
         /**
          * 通知EventLoop更新该channel
          */
-        void update();
+        void update(int opt);
 
     public:
 
@@ -66,6 +72,8 @@ namespace muduo::net {
 
         int events() const { return events_; }
 
+        int revents() const { return revents_; }
+
         void set_revents(int revents) { revents_ = revents; }
 
         bool isNoneEvent() const { return events_ == kNoneEvent; }
@@ -75,22 +83,22 @@ namespace muduo::net {
          */
         void enableReading() {
             events_ |= kReadEvent;
-            update();
+            update(kEnReadOpt);
         }
 
         void disableReading() {
             events_ &= ~kReadEvent;
-            update();
+            update(kDisReadOpt);
         }
 
         void enableWriting() {
             events_ |= kWriteEvent;
-            update();
+            update(kEnWriteOpt);
         }
 
         void disableWriting() {
             events_ &= ~kWriteEvent;
-            update();
+            update(kDisWriteOpt);
         }
 
         /**
@@ -98,7 +106,7 @@ namespace muduo::net {
          */
         void disableAll() {
             events_ = kNoneEvent;
-            update();
+            update(kDisAllOpt);
         }
 
         /**

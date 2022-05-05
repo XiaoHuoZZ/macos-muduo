@@ -75,7 +75,6 @@ void testServer() {
     });
     server.setMessageCallback([](const TcpConnectionPtr& ptr, Buffer* buffer, muduo::TimeStamp receive_time){
         std::string tmp = buffer->retrieveAllAsString();
-//        LOG_INFO("{} {}", std::this_thread::get_id(), tmp);
         ptr->send(tmp);
     });
     server.setThreadNum(10);
@@ -87,7 +86,7 @@ void testServer() {
 
 int main() {
 
-//    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
 
     testServer();
 

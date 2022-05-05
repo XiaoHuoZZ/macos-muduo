@@ -1,20 +1,16 @@
 /**
  * 使用POSIX POLL 实现Poller
  */
-#ifndef MACOS_MUDUO_POLLER_H
-#define MACOS_MUDUO_POLLER_H
+#ifndef MACOS_MUDUO_POLL_POLLER_H
+#define MACOS_MUDUO_POLL_POLLER_H
 
 #include "muduo/net/poller.h"
-#include <vector>
 
 struct pollfd;
 
 namespace muduo::net {
 
-    class Channel; //前置声明，避免循环include
-
-    class PollPoller : noncopyable,
-                       public Poller {
+    class PollPoller : public Poller {
     private:
 
         using PollFdList = std::vector<struct pollfd>;
@@ -23,10 +19,11 @@ namespace muduo::net {
 
         /**
         * 负责找出poll_fds_中有变化的fd, 将其所属的channel放入activeChannels里
-        * @param numEvents         监听的事件
+        * @param numEvents         事件的数量
         * @param activeChannels
         */
         void fillActiveChannels(int numEvents, ChannelList *activeChannels) const;
+
     public:
         using ChannelList = std::vector<Channel *>;
 
@@ -49,7 +46,7 @@ namespace muduo::net {
          * 必须在EventLoop线程中调用
          * @param channel
          */
-        void updateChannel(Channel *channel) override;
+        void updateChannel(Channel *channel, int opt) override;
 
         /**
          * 移除该Poller里面的channel
@@ -60,4 +57,4 @@ namespace muduo::net {
     };
 }
 
-#endif //MACOS_MUDUO_POLLER_H
+#endif //MACOS_MUDUO_POLL_POLLER_H

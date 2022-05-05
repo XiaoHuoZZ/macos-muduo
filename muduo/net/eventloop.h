@@ -105,7 +105,7 @@ namespace muduo::net {
          * 实际是通过Poller来管理
          * @param channel
          */
-        void updateChannel(Channel *channel);
+        void updateChannel(Channel *channel, int opt);
 
         /**
          * 唤醒IO线程

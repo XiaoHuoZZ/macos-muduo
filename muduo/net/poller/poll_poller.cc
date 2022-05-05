@@ -18,7 +18,7 @@ muduo::TimeStamp PollPoller::poll(int timeoutMs, ChannelList *activeChannels) {
     } else if (numEvents == 0) {
         LOG_TRACE("nothing happened");
     } else {
-        LOG_ERROR("Poller:poll()");
+        LOG_ERROR("Poll:poll()");
     }
     return now;
 }
@@ -36,7 +36,7 @@ void PollPoller::fillActiveChannels(int numEvents, ChannelList *activeChannels) 
     }
 }
 
-void PollPoller::updateChannel(Channel *channel) {
+void PollPoller::updateChannel(Channel *channel, int opt) {
     assertInLoopThread();
     LOG_TRACE("fd= {} events= {}", channel->fd(), channel->events());
 
@@ -124,7 +124,7 @@ void PollPoller::removeChannel(muduo::net::Channel *channel) {
         int channelAtEnd = poll_fds_.back().fd;
         iter_swap(poll_fds_.begin() + idx, poll_fds_.end() - 1);
 
-        //如果末尾fd小于0，是一个不用关心的fd，需要还原它真实的fd
+        //如果末尾fd小于0，是一个不用关心的fd，需要还原它真实的fd用来查找
         if (channelAtEnd < 0) {
             channelAtEnd = -channelAtEnd - 1;
         }

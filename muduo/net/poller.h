@@ -3,8 +3,8 @@
  * 这是抽象类
  * 有着不同实现
  */
-#ifndef MACOS_MUDUO_POLL_POLLER_H
-#define MACOS_MUDUO_POLL_POLLER_H
+#ifndef MACOS_MUDUO_POLLER_H
+#define MACOS_MUDUO_POLLER_H
 
 #include "muduo/base/utils.h"
 #include "muduo/net/eventloop.h"
@@ -42,7 +42,7 @@ namespace muduo::net {
          * 必须在EventLoop线程中调用
          * @param channel
          */
-        virtual void updateChannel(Channel *channel) = 0;
+        virtual void updateChannel(Channel *channel, int opt) = 0;
 
         /**
          * 移除该Poller里面的channel
@@ -61,4 +61,4 @@ namespace muduo::net {
     };
 }
 
-#endif //MACOS_MUDUO_POLL_POLLER_H
+#endif //MACOS_MUDUO_POLLER_H

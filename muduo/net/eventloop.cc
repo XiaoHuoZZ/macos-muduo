@@ -88,10 +88,10 @@ void EventLoop::quit() {
     }
 }
 
-void EventLoop::updateChannel(Channel *channel) {
+void EventLoop::updateChannel(Channel *channel, int opt) {
     assert(channel->ownerLoop() == this);    //防止不属于该EventLoop的Channel进来
     assertInLoopThread();                    //必须在IO线程来做
-    poller_->updateChannel(channel);
+    poller_->updateChannel(channel, opt);
 }
 
 std::pair<int, int> EventLoop::createWakeupFd() {
