@@ -186,9 +186,16 @@ void TcpConnection::sendInLoop(const void *data, size_t len) {
             if (n_wrote < len) {
                 LOG_TRACE("write not complete fd = {}", socket_->fd());
             }
-                //一次写完
+            //一次写完
             else if (writeCompleteCallback_) {
-                writeCompleteCallback_(shared_from_this());
+                /**
+                 * 由于用户很有可能在writeComplete回调中继续使用send
+                 * 而send又触发了writeComplete陷入无限嵌套
+                 * 因此为了防止栈溢出，故writeComplete需要延后执行
+                 */
+                loop_->queueInLoop([this]{
+                    writeCompleteCallback_(shared_from_this());
+                });
             }
         }
             //写入错误
@@ -236,7 +243,14 @@ void TcpConnection::handleWrite() {
                 channel_->disableWriting();
                 //缓冲被清空，回调
                 if (writeCompleteCallback_) {
-                    writeCompleteCallback_(shared_from_this());
+                    /**
+                     * 由于用户很有可能在writeComplete回调中继续使用send
+                     * 而send又触发了writeComplete陷入无限嵌套
+                     * 因此为了防止栈溢出，故writeComplete需要延后执行
+                     */
+                    loop_->queueInLoop([this]{
+                        writeCompleteCallback_(shared_from_this());
+                    });
                 }
                 //如果现在TCP连接处于KDisConnecting，需要继续关闭流程
                 if (state_ == kDisconnecting) {

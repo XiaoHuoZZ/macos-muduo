@@ -94,7 +94,7 @@ void testServer() {
 
 int main() {
 
-//    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
+    spdlog::set_level(spdlog::level::trace); // Set global log level to debug
 
     testServer();
 

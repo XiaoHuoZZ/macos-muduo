@@ -25,7 +25,7 @@ void EventLoopThreadPool::start() {
      */
     for (int i = 0; i < num_threads_; ++i) {
         auto *t = new EventLoopThread(name_);
-        threads_.push_back(std::unique_ptr<EventLoopThread>(t));
+        threads_.emplace_back(t);
         loops_.push_back(t->startLoop());
     }
 
