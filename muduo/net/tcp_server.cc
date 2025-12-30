@@ -69,7 +69,7 @@ void TcpServer::start() {
     if (!started_.exchange(true)) {
 
         /**
-         * 创建IO线程
+         * 创建N个IO线程
          */
         thread_pool_->start();
 

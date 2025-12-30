@@ -1,3 +1,4 @@
+#ifndef __linux__
 #include "muduo/net/poller/kqueue_poller.h"
 #include "muduo/net/channel.h"
 #include <sys/event.h>
@@ -13,7 +14,7 @@ namespace {
 KqueuePoller::KqueuePoller(EventLoop *loop)
         : Poller(loop),
           kqueue_fd_(kqueue()),
-          events_(16) {
+          events_(16) {    //第一次最多接收16个事件
     if (kqueue_fd_ == -1) {
         LOG_ERROR("kqueue create failed");
     }
@@ -82,8 +83,7 @@ void KqueuePoller::updateChannel(Channel *channel, int opt) {
         if (opt == Channel::kEnReadOpt) {
             update_one(EVFILT_READ, EV_ADD | EV_ENABLE, channel);
             kq_events_[fd] = reg_events | Channel::kReadEvent;               //更新事件
-        }
-        else {
+        } else {
             update_one(EVFILT_WRITE, EV_ADD | EV_ENABLE, channel);
             kq_events_[fd] = reg_events | Channel::kReadEvent;              //更新事件
         }
@@ -102,20 +102,16 @@ void KqueuePoller::updateChannel(Channel *channel, int opt) {
         if (opt == Channel::kDisAllOpt) {
             update(EV_DISABLE, channel);
             kq_events_[fd] = 0;
-        }
-        else if (opt == Channel::kEnReadOpt) {
+        } else if (opt == Channel::kEnReadOpt) {
             update_one(EVFILT_READ, EV_ADD | EV_ENABLE, channel);
             kq_events_[fd] = reg_events | Channel::kReadEvent;
-        }
-        else if (opt == Channel::kDisReadOpt) {
+        } else if (opt == Channel::kDisReadOpt) {
             update_one(EVFILT_READ, EV_DISABLE, channel);
             kq_events_[fd] = reg_events & (~Channel::kReadEvent);
-        }
-        else if (opt == Channel::kEnWriteOpt) {
+        } else if (opt == Channel::kEnWriteOpt) {
             update_one(EVFILT_WRITE, EV_ADD | EV_ENABLE, channel);
             kq_events_[fd] = reg_events | Channel::kWriteEvent;
-        }
-        else if (opt == Channel::kDisWriteOpt) {
+        } else if (opt == Channel::kDisWriteOpt) {
             update_one(EVFILT_WRITE, EV_DISABLE, channel);
             kq_events_[fd] = reg_events & (~Channel::kWriteEvent);
         }
@@ -123,7 +119,7 @@ void KqueuePoller::updateChannel(Channel *channel, int opt) {
     }
 }
 
-void KqueuePoller::update(int opt, Channel* channel) {
+void KqueuePoller::update(int opt, Channel *channel) {
     int fd = channel->fd();
     assert(kq_events_.find(fd) != kq_events_.end());
 
@@ -156,7 +152,7 @@ void KqueuePoller::update(int opt, Channel* channel) {
     }
 }
 
-void KqueuePoller::update_one(int event, int opt, Channel* channel) const {
+void KqueuePoller::update_one(int event, int opt, Channel *channel) const {
     struct kevent tmp{};
     EV_SET(&tmp, channel->fd(), event, opt, 0, 0, static_cast<void *>(channel));
 
@@ -205,3 +201,4 @@ void KqueuePoller::removeChannel(muduo::net::Channel *channel) {
 KqueuePoller::~KqueuePoller() {
     ::close(kqueue_fd_);
 }
+#endif //__linux__

@@ -49,6 +49,10 @@ EventLoop::EventLoop()
     //设置wakeup_channel_
     wakeup_channel_->setReadCallback([this](TimeStamp receive_time) { handleRead(); });
     wakeup_channel_->enableReading();
+
+#ifdef __linux__
+    timerQueue_ = std::make_unique<TimerQueue>(this);
+#endif //__linux__
 }
 
 EventLoop::~EventLoop() {
@@ -68,6 +72,7 @@ void EventLoop::loop() {
     while (!quit_) {
         activeChannels_.clear();
         TimeStamp poll_time = poller_->poll(kPollTimeMs, &activeChannels_);  //开启循环，得到的结果在activeChannels_里面
+        // 职责分离，poller不负责IO事件分发，因此需要导出activeChannels
         for (auto &activeChannel: activeChannels_) {
             activeChannel->handleEvent(poll_time);    //事件分发（由Channel来做）
         }
@@ -170,5 +175,30 @@ void EventLoop::removeChannel(Channel *channel) {
     poller_->removeChannel(channel);
 }
 
+#ifdef __linux__
+using muduo::net::TimerId;
+TimerId EventLoop::runAt(const TimeStamp &time, const Timer::TimerCallback& cb)
+{
+    auto diff = time - time::getTimeStamp();
+    auto steadyTime = time::getSteadyTime() + diff;
 
+    return timerQueue_->addTimer(steadyTime, 0, cb);
+}
 
+TimerId EventLoop::runAfter(uint64_t delay, const Timer::TimerCallback& cb)
+{
+    auto steadyTime = time::getSteadyTime() + delay * 1000000;
+
+    return timerQueue_->addTimer(steadyTime, 0, cb);
+}
+
+TimerId EventLoop::runEvery(uint64_t interval, const Timer::TimerCallback& cb)
+{
+    return timerQueue_->addTimer(time::getSteadyTime(), interval, cb);
+}
+
+void EventLoop::cancel(const TimerId &id)
+{
+    timerQueue_->cancel(id);
+}
+#endif //__linux__

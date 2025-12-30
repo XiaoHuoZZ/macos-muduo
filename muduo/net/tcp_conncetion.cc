@@ -37,7 +37,7 @@ void TcpConnection::handleRead(TimeStamp receive_time) {
     if (n > 0) {
         messageCallback_(shared_from_this(), &input_buffer_, receive_time);
     }
-        //读到了EOF,证明对方关闭了输出流
+    //读到了EOF,证明对方关闭了输出流
     else if (n == 0) {
         handleClose();
     } else {

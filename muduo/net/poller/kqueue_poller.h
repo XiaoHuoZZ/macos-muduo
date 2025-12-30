@@ -5,6 +5,7 @@
 #ifndef MACOS_MUDUO_KQUEUE_POLLER_H
 #define MACOS_MUDUO_KQUEUE_POLLER_H
 
+#ifndef __linux__
 #include "muduo/net/poller.h"
 
 struct kevent;
@@ -69,5 +70,5 @@ namespace muduo::net {
     };
 }
 
-
+#endif //__linux__
 #endif //MACOS_MUDUO_KQUEUE_POLLER_H

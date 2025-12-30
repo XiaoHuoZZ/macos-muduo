@@ -1,0 +1,34 @@
+@startuml
+Actor User
+participant EventLoop
+participant Poller
+participant ChannelA
+participant ChannelB
+
+User -> EventLoop : loop()
+activate EventLoop
+
+EventLoop -> Poller : poll()
+activate Poller
+
+Poller -> Poller : fillActiveChannels()
+
+return activeChannels
+
+== 分发事件 ==
+
+EventLoop -> ChannelA : handleEvent()
+activate ChannelA
+ChannelA -> : user callbacks
+deactivate ChannelA
+
+EventLoop -> ChannelB : handleEvent()
+activate ChannelB
+ChannelB -> : user callbacks
+deactivate ChannelB
+
+== 下一轮event ==
+EventLoop -> Poller : poll()
+activate Poller
+
+@enduml

@@ -11,6 +11,9 @@
 
 #include "muduo/base/logger.h"
 #include "muduo/base/utils.h"
+#ifdef __linux__
+#include "muduo/net/timer_queue.h"
+#endif //__linux__
 
 
 namespace muduo::net {
@@ -19,7 +22,6 @@ namespace muduo::net {
 
     class Channel;                     //前置声明，避免循环include
     class Poller;                      //前置声明，避免循环include
-
     class EventLoop : noncopyable {
     public:
         using Functor = std::function<void()>;
@@ -39,6 +41,10 @@ namespace muduo::net {
 
         std::pair<int,int> wakeup_fds;                 //专门用于唤醒IO线程的文件描述符，由于用pipe实现，因此需要一对描述符
         std::unique_ptr<Channel> wakeup_channel_;     //专门用于唤醒事件注册的的channel
+
+#ifdef __linux__
+        std::unique_ptr<TimerQueue> timerQueue_;
+#endif //__linux__
 
         /**
          * 取出pipe里面的数据(1字节)，防止陷入busy loop
@@ -118,6 +124,31 @@ namespace muduo::net {
          * @param channel
          */
         void removeChannel(Channel* channel);
+
+#ifdef __linux__
+        /**
+         * 设置一个定时任务
+         * 指定时间执行
+         */
+        TimerId runAt(const TimeStamp &time, const Timer::TimerCallback& cb);
+
+        /**
+         * 设置一个定时任务
+         * delay ms 后执行
+         */
+        TimerId runAfter(uint64_t delay, const Timer::TimerCallback& cb);
+
+        /**
+         * 设置一个定时任务
+         * 每隔interval ms 后执行
+         */
+        TimerId runEvery(uint64_t interval, const Timer::TimerCallback& cb);
+
+        /**
+         * 删除定时器
+         */
+        void cancel(const TimerId &id);
+#endif //__linux__
     };
 }  // namespace muduo::net
 

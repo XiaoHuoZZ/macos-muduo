@@ -29,9 +29,9 @@ namespace muduo::net {
         };
 
         EventLoop *loop_;                       //注册到哪个Eventloop
-        std::string name_;                     //连接名字
-        std::atomic<StateE> state_;            //连接装填
-        std::unique_ptr<Socket> socket_;                         //持有的socket
+        std::string name_;                      //连接名字
+        std::atomic<StateE> state_;             //连接状态
+        std::unique_ptr<Socket> socket_;        //持有的socket
         std::unique_ptr<Channel> channel_;      //持有的channel
         InetAddress local_addr_, peer_addr_;
         ConnectionCallback connectionCallback_;

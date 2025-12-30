@@ -2,6 +2,7 @@
  * poller负责开启事件监听, 维护管理ChannelList, 并找出有事件到来的Channel
  * 这是抽象类
  * 有着不同实现
+ * 注意Poller并不拥有Channel，只是有人注册到这里，因此Channel析构之前必须在Poller里面注销
  */
 #ifndef MACOS_MUDUO_POLLER_H
 #define MACOS_MUDUO_POLLER_H
