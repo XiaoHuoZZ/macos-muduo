@@ -14,8 +14,6 @@ class Timer {
 public:
     using TimerCallback = std::function<void()>;
 private:
-    static std::atomic_int seq_;
-    int id_;
     // 使用单调时间，方便后续使用TFD_TIMER_ABSTIME
     SteadyTime expiration_;
     // ms
@@ -31,7 +29,6 @@ public:
 
     ~Timer() = default;
 
-    int id() const { return id_; };
     SteadyTime expiration() const { return expiration_; };
     uint64_t intervalMs() const { return intervalMs_; };
     bool isCancel() const { return isCancel_; };
@@ -44,11 +41,20 @@ public:
 
 class TimerId {
 private:
-    // weak_ptr已经足够区分Timer，即使先后Timer的raw地址相同
     std::weak_ptr<Timer> timer_;
+    uint64_t id_;
+    static inline std::atomic_int seq_ = 0;
 public:
     friend class TimerQueue;
-    TimerId(const std::shared_ptr<Timer> &timer) : timer_(timer) {};
+    TimerId(const std::shared_ptr<Timer> &timer) : timer_(timer), id_(seq_++) {};
+
+    bool operator==(const TimerId& other) const {
+        return id_ == other.id_;
+    }
+
+    bool operator!=(const TimerId& other) const {
+        return id_ != other.id_;
+    }
 };
 
 
