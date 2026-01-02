@@ -99,7 +99,8 @@ void TcpConnection::connectDestroyed() {
 
     /**
      * 这里逻辑与handleClose有重叠
-     * 这是因为有可能不经由handleClose 而调用connectDestroyed
+     * 这是因为有可能不经由handleClose 而调用connectDestroyed，例如析构时
+     * connectDestroyed一定会调用，而handleClose不一定
      */
     if (state_ == kConnected) {
         setState(kDisconnected);

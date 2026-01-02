@@ -28,8 +28,6 @@ void EventLoopThreadPool::start() {
         threads_.emplace_back(t);
         loops_.push_back(t->startLoop());
     }
-
-
 }
 
 EventLoop *EventLoopThreadPool::getNextLoop() {

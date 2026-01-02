@@ -18,14 +18,14 @@ Acceptor::Acceptor(muduo::net::EventLoop *loop, const muduo::net::InetAddress &l
 }
 
 void Acceptor::listen() {
-    loop_->assertInLoopThread();             //此操作需要在EventLoop线程上来做，避免对EventLoop有竞争问题
+    loop_->assertInLoopThread();             //此操作需要在EventLoop线程上来做，涉及Channel操作
     listenning_ = true;
     accept_socket_.listen();                 //socket开启监听
     accept_channel_.enableReading();        //读事件监听
 }
 
 void Acceptor::handleRead() {
-    loop_->assertInLoopThread();               //此操作需要在EventLoop线程上来做，避免对EventLoop有竞争问题
+    loop_->assertInLoopThread();               //Read事件一定处于IO线程中发生
 
     InetAddress peer_add(0);
     Socket conn_sock = accept_socket_.accept(&peer_add);   //建立连接，得到新的socket

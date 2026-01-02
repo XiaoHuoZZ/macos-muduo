@@ -1,0 +1,24 @@
+@startuml
+Actor User
+participant EventLoop
+participant Channel
+participant Acceptor
+participant TcpServer
+
+User -> EventLoop : loop()
+activate EventLoop
+
+EventLoop -> Channel : handleEvent()
+activate Channel
+
+Channel -> Acceptor : handleRead()
+activate Acceptor
+
+Acceptor -> Acceptor : accept()
+Acceptor -> TcpServer : newConn()
+activate TcpServer
+
+TcpServer -> TcpConnection : 《create》
+
+
+@enduml

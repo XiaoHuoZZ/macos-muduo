@@ -58,26 +58,24 @@ void TcpServer::newConnection(Socket &&socket, const InetAddress &peer_addr) {
     conn->setCloseCallback([this](const TcpConnectionPtr &ptr) {
         removeConnection(ptr);
     });
-    //在IO线程中执行回调
-    io_loop->runInLoop([conn] {
-        conn->connectEstablished();
-    });
+    conn->connectEstablished();
 }
 
 void TcpServer::start() {
     //注意这里需要使用原子操作exchange, 防止listen多次
-    if (!started_.exchange(true)) {
-
-        /**
-         * 创建N个IO线程
-         */
-        thread_pool_->start();
-
-        assert(!acceptor_->listenning());
-        loop_->runInLoop([this] {
-            acceptor_->listen();
-        });
+    if (started_.exchange(true)) {
+        return;
     }
+
+    /**
+    * 创建N个IO线程
+    */
+    thread_pool_->start();
+
+    assert(!acceptor_->listenning());
+    loop_->runInLoop([this] {
+        acceptor_->listen();
+    });
 }
 
 void TcpServer::removeConnection(const TcpConnectionPtr &conn) {

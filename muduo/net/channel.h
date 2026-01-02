@@ -2,6 +2,7 @@
  * channel是对文件描述符及其附带事件的封装
  * 负责向EventLoop注册IO事件以及对事件的分发
  * channel 始终服务于同一个fd
+ * channel对象始终属于一个Eventloop，所有操作须在IO线程里面做
  */
 
 #ifndef MACOS_MUDUO_CHANNEL_H
