@@ -85,7 +85,7 @@ void KqueuePoller::updateChannel(Channel *channel, int opt) {
             kq_events_[fd] = reg_events | Channel::kReadEvent;               //更新事件
         } else {
             update_one(EVFILT_WRITE, EV_ADD | EV_ENABLE, channel);
-            kq_events_[fd] = reg_events | Channel::kReadEvent;              //更新事件
+            kq_events_[fd] = reg_events | Channel::kWriteEvent;              //更新事件
         }
 
     } else {
@@ -100,19 +100,19 @@ void KqueuePoller::updateChannel(Channel *channel, int opt) {
         int reg_events = kq_events_[fd];
 
         if (opt == Channel::kDisAllOpt) {
-            update(EV_DISABLE, channel);
+            update(EV_DELETE, channel);
             kq_events_[fd] = 0;
         } else if (opt == Channel::kEnReadOpt) {
             update_one(EVFILT_READ, EV_ADD | EV_ENABLE, channel);
             kq_events_[fd] = reg_events | Channel::kReadEvent;
         } else if (opt == Channel::kDisReadOpt) {
-            update_one(EVFILT_READ, EV_DISABLE, channel);
+            update_one(EVFILT_READ, EV_DELETE, channel);
             kq_events_[fd] = reg_events & (~Channel::kReadEvent);
         } else if (opt == Channel::kEnWriteOpt) {
             update_one(EVFILT_WRITE, EV_ADD | EV_ENABLE, channel);
             kq_events_[fd] = reg_events | Channel::kWriteEvent;
         } else if (opt == Channel::kDisWriteOpt) {
-            update_one(EVFILT_WRITE, EV_DISABLE, channel);
+            update_one(EVFILT_WRITE, EV_DELETE, channel);
             kq_events_[fd] = reg_events & (~Channel::kWriteEvent);
         }
 
@@ -142,8 +142,7 @@ void KqueuePoller::update(int opt, Channel *channel) {
     //向kqueue应用更改
     int r = kevent(kqueue_fd_, evs.data(), static_cast<int>(evs.size()), nullptr, 0, nullptr);
     if (r == -1) {
-        err(EXIT_FAILURE, "kevent register");
-        LOG_ERROR("kqueue::update error");
+        LOG_ERROR("kqueue::update error {}", errno);
     }
     for (auto &e: evs) {
         if (e.flags & EV_ERROR) {

@@ -6,6 +6,18 @@
 
 using muduo::net::TcpConnection;
 
+void muduo::net::defaultConnectionCallback(const TcpConnectionPtr& conn)
+{
+    LOG_TRACE("conn {}", (conn->connected() ? "UP" : "DOWN"));
+}
+
+void muduo::net::defaultMessageCallback(const TcpConnectionPtr&,
+                                        Buffer* buf,
+                                        TimeStamp)
+{
+    buf->retrieveAll();
+}
+
 TcpConnection::TcpConnection(EventLoop *loop, std::string name, Socket &&socket, const InetAddress &local_addr,
                              const InetAddress &peer_addr)
         : loop_(loop),
@@ -48,7 +60,6 @@ void TcpConnection::handleRead(TimeStamp receive_time) {
 
 TcpConnection::~TcpConnection() {
     LOG_TRACE("TcpConnection::dtor[{}] fd= {} state= {}", name_, channel_->fd(), stateToString());
-    assert(state_ == kDisconnected);
 }
 
 const char *TcpConnection::stateToString() const {
@@ -57,6 +68,8 @@ const char *TcpConnection::stateToString() const {
             return "kConnecting";
         case kConnected:
             return "kConnected";
+        case kDisconnecting:
+            return "kDisconnecting";
         case kDisconnected:
             return "kDisconnected";
         default:
@@ -99,7 +112,7 @@ void TcpConnection::connectDestroyed() {
 
     /**
      * 这里逻辑与handleClose有重叠
-     * 这是因为有可能不经由handleClose 而调用connectDestroyed，例如析构时
+     * 这是因为有可能不经由handleClose 而调用connectDestroyed，例如TcpServer析构时
      * connectDestroyed一定会调用，而handleClose不一定
      */
     if (state_ == kConnected) {

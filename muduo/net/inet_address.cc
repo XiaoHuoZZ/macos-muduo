@@ -14,6 +14,10 @@ InetAddress::InetAddress(int port)
         : addr_(createStruct("0.0.0.0", port)) {
 }
 
+InetAddress::InetAddress(const sockaddr_in &addr)
+        : addr_(addr) {
+}
+
 sockaddr_in InetAddress::createStruct(const std::string& ipv4, int port) {
     struct sockaddr_in tmp{};
     memset(&tmp, 0, sizeof tmp);

@@ -1,4 +1,5 @@
 #include "muduo/net/tcp_server.h"
+#include "muduo/net/callbacks.h"
 #include "muduo/net/eventloop.h"
 #include "muduo/net/eventloop_thread_pool.h"
 #include "muduo/net/inet_address.h"
@@ -13,8 +14,10 @@ TcpServer::TcpServer(muduo::net::EventLoop *loop, const InetAddress &listen_addr
           name_(std::move(name)),
           acceptor_(std::make_unique<Acceptor>(loop, listen_addr)),
           thread_pool_(std::make_unique<EventLoopThreadPool>(loop, name_)),
+          connectionCallback_(defaultConnectionCallback),
+          messageCallback_(defaultMessageCallback),
           started_(false),
-          next_conn_id_(1) {
+          next_conn_id_(0) {
     //设置新连接回调
     acceptor_->setNewConnCallback([this](Socket &&socket, const InetAddress &address) {
         newConnection(std::move(socket), address);
@@ -58,7 +61,9 @@ void TcpServer::newConnection(Socket &&socket, const InetAddress &peer_addr) {
     conn->setCloseCallback([this](const TcpConnectionPtr &ptr) {
         removeConnection(ptr);
     });
-    conn->connectEstablished();
+    io_loop->runInLoop([conn]() {
+        conn->connectEstablished();
+    });
 }
 
 void TcpServer::start() {

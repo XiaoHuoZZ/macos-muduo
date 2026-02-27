@@ -6,6 +6,7 @@
 #define MACOS_MUDUO_SOCKET_H
 
 #include "muduo/base/utils.h"
+#include "muduo/net/inet_address.h"
 
 namespace muduo::net {
 
@@ -61,6 +62,13 @@ namespace muduo::net {
         Socket accept(InetAddress *peeraddr) const;
 
         /**
+         * 连接服务器
+         * @param serveraddr 服务端地址端地址
+         * @return 连接结果
+         */
+        int connect(InetAddress *serveraddr) const;
+
+        /**
          * 设置为非阻塞模式
          */
         void setNoBlocking() const;
@@ -90,6 +98,16 @@ namespace muduo::net {
          * 关闭输出流
          */
         void shutdownWrite();
+
+        /**
+         * close fd unsafe
+         */
+        void close();
+
+        int getSocketErr();
+
+        InetAddress getPeerAddr();
+        InetAddress getLocalAddr();
     };
 }
 

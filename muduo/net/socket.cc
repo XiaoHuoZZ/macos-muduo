@@ -58,6 +58,11 @@ Socket Socket::accept(InetAddress *peeraddr) const {
     return tmp;               //RVO
 }
 
+int Socket::connect(InetAddress *serveraddr) const {
+    sockaddr_in addr = serveraddr->sockaddrIn();
+    return ::connect(fd_, reinterpret_cast<struct sockaddr *>(&addr),  static_cast<socklen_t>(sizeof(addr)));
+}
+
 void Socket::setNoBlocking() const {
     int flag = fcntl(fd_, F_GETFL, 0);      //获取之前的设置
     assert(flag);
@@ -92,6 +97,25 @@ void Socket::shutdownWrite() {
     }
 }
 
+void Socket::close() {
+    if (fd_ != -1) {
+        if (::close(fd_) < 0) {
+            LOG_ERROR("socket::close error {}", fd());
+        }
+        LOG_TRACE("socket::close {}", fd());
+    }
+    fd_ = -1;
+}
+
+int Socket::getSocketErr() {
+    int optval = 0;
+    auto optlen = static_cast<socklen_t>(sizeof optval);
+    if (::getsockopt(fd_, SOL_SOCKET, SO_ERROR, &optval, &optlen) < 0) {
+        return errno;
+    }
+    return optval;
+}
+
 void Socket::setTcpNoDelay(bool on) const {
     int opt = on ? 1 : 0;
     int res = ::setsockopt(fd_, IPPROTO_TCP, TCP_NODELAY,
@@ -101,6 +125,24 @@ void Socket::setTcpNoDelay(bool on) const {
     }
 }
 
+InetAddress Socket::getPeerAddr() {
+    struct sockaddr_in peeraddr {0};
+    auto addrlen = static_cast<socklen_t>(sizeof peeraddr);
+    if (::getpeername(fd_, reinterpret_cast<struct sockaddr *>(&peeraddr), &addrlen) < 0)
+    {
+        LOG_ERROR("socket::getPerrAddr error {}", fd_);
+    }
+    return InetAddress(peeraddr);
+}
 
+InetAddress Socket::getLocalAddr() {
+    struct sockaddr_in localaddr {0};
+    auto addrlen = static_cast<socklen_t>(sizeof localaddr);
+    if (::getsockname(fd_, reinterpret_cast<struct sockaddr *>(&localaddr), &addrlen) < 0)
+    {
+        LOG_ERROR("socket::localAddr error {}", fd_);
+    }
+    return InetAddress(localaddr);
+}
 
 

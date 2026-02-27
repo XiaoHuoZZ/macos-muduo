@@ -1,6 +1,7 @@
 
-add_executable(main_test main.cc)
-set(ALL_TEST main_test)
+add_executable(server_test server_test.cc)
+add_executable(client_test client_test.cc)
+set(ALL_TEST server_test client_test)
 
 # Linux
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")

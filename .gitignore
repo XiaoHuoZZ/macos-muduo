@@ -6,3 +6,4 @@ bin
 cmake-build-debug
 .DS_Store
 compile_commands.json
+.clang-tidy

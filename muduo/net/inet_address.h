@@ -16,6 +16,8 @@ namespace muduo::net {
 
         explicit InetAddress(int port);
 
+        explicit InetAddress(const sockaddr_in &addr);
+
         std::string ipv4() const;
 
         int port() const { return ntohs(addr_.sin_port); };
